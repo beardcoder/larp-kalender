@@ -1,11 +1,11 @@
 /**
- * Motion helpers (motion.dev). Uses the small WAAPI-based `motion/mini` animate with Motion's spring and
+ * Motion helpers (motion.dev). Uses the small WAAPI-based `motion/mini` animate with Motion's
  * stagger generators, animating the individual CSS transform properties (translate, scale, rotate).
  * Everything respects prefers-reduced-motion.
  */
 
 import { animate } from "motion/mini";
-import { spring, stagger } from "motion";
+import { stagger } from "motion";
 
 export const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -21,17 +21,34 @@ export function stampSeals(root: Element): void {
   );
 }
 
-export function sheetIn(sheet: Element, backdrop: Element | null, fromSide: boolean): void {
+/** iOS-like deceleration without overshoot. */
+const SHEET_EASE = [0.32, 0.72, 0, 1] as const;
+const hidden = (fromSide: boolean) => (fromSide ? "100% 0" : "0 100%");
+
+/**
+ * Slides a sheet in. Must run before the first paint (useLayoutEffect): the start position is set inline
+ * synchronously, so the sheet never flashes at its final position.
+ */
+export function sheetIn(sheet: HTMLElement, backdrop: HTMLElement | null, fromSide: boolean): void {
   if (reducedMotion()) return;
-  animate(sheet, { translate: fromSide ? ["100% 0", "0 0"] : ["0 100%", "0 0"] }, { type: spring, stiffness: 380, damping: 38 });
-  if (backdrop) animate(backdrop, { opacity: [0, 1] }, { duration: 0.2 });
+  sheet.style.translate = hidden(fromSide);
+  if (backdrop) backdrop.style.opacity = "0";
+  const a = animate(sheet, { translate: [hidden(fromSide), "0 0"] }, { duration: 0.36, ease: SHEET_EASE });
+  const b = backdrop ? animate(backdrop, { opacity: [0, 1] }, { duration: 0.25, ease: "easeOut" }) : null;
+  void Promise.all([a, b]).then(() => {
+    sheet.style.translate = "";
+    if (backdrop) backdrop.style.opacity = "";
+  });
 }
 
-export async function sheetOut(sheet: Element, backdrop: Element | null, fromSide: boolean): Promise<void> {
+/** Slides a sheet out and keeps it hidden until it is unmounted (no snap back after the animation). */
+export async function sheetOut(sheet: HTMLElement, backdrop: HTMLElement | null, fromSide: boolean): Promise<void> {
   if (reducedMotion()) return;
-  const a = animate(sheet, { translate: fromSide ? ["0 0", "100% 0"] : ["0 0", "0 100%"] }, { duration: 0.22, ease: [0.4, 0, 1, 1] });
-  if (backdrop) animate(backdrop, { opacity: [1, 0] }, { duration: 0.2 });
-  await a;
+  const a = animate(sheet, { translate: ["0 0", hidden(fromSide)] }, { duration: 0.24, ease: [0.4, 0, 1, 1] });
+  const b = backdrop ? animate(backdrop, { opacity: [1, 0] }, { duration: 0.22 }) : null;
+  await Promise.all([a, b]);
+  sheet.style.translate = hidden(fromSide);
+  if (backdrop) backdrop.style.opacity = "0";
 }
 
 export function pop(el: Element): void {

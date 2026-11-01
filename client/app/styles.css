@@ -123,6 +123,8 @@
   box-sizing: border-box;
 }
 html {
+  /* Reserve the scrollbar space so locking scroll for sheets does not shift the page. */
+  scrollbar-gutter: stable;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
@@ -841,6 +843,7 @@ button {
 }
 .sheet {
   position: relative;
+  will-change: translate;
   width: 100%;
   max-width: 640px;
   max-height: 92dvh;

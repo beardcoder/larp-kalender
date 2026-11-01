@@ -1,5 +1,5 @@
 import type { ComponentChildren } from "preact";
-import { useEffect, useRef } from "preact/hooks";
+import { useLayoutEffect, useRef } from "preact/hooks";
 import { sheetIn, sheetOut } from "../../lib/motion.ts";
 import { Icon } from "../components.tsx";
 
@@ -34,7 +34,8 @@ export function Sheet({
     onClose();
   };
 
-  useEffect(() => {
+  // Layout effect: start the slide-in before the browser paints the sheet for the first time.
+  useLayoutEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
     if (sheetRef.current) {
       sheetIn(sheetRef.current, backdropRef.current, side);
