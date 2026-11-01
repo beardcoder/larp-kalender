@@ -1,74 +1,65 @@
-/** Generates the wax-seal app icon (SVG) and PNG variants via ImageMagick. Run once: bun scripts/make-icons.ts */
-
-import { mkdirSync, writeFileSync } from "node:fs";
+/** Generate all PWA artwork. Requires ImageMagick; run: bun scripts/make-icons.ts */
+import { mkdirSync, writeFileSync, mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
+import { tmpdir } from "node:os";
 
-const out = join(import.meta.dir, "..", "public", "icons");
+const root = join(import.meta.dir, "..");
+const out = join(root, "public/icons");
 mkdirSync(out, { recursive: true });
+const temp = mkdtempSync(join(tmpdir(), "larp-icons-"));
 
-/** Wobbly seal outline: a circle whose radius varies with a few sine waves. */
-function sealPath(cx: number, cy: number, r: number, wobble: number, points = 96): string {
-  const pts: string[] = [];
-  for (let i = 0; i < points; i++) {
-    const a = (i / points) * Math.PI * 2;
-    const rr = r + wobble * (Math.sin(a * 7) * 0.6 + Math.sin(a * 13 + 1.3) * 0.3 + Math.sin(a * 3 + 0.4) * 0.5);
-    pts.push(`${(cx + Math.cos(a) * rr).toFixed(2)},${(cy + Math.sin(a) * rr).toFixed(2)}`);
-  }
-  return `M${pts.join("L")}Z`;
+
+function outline(cx: number, cy: number, r: number): string {
+  return Array.from({ length: 120 }, (_, i) => {
+    const a = i * Math.PI / 60;
+    const radius = r * (1 + 0.025 * Math.sin(7 * a) + 0.014 * Math.sin(13 * a + 1.3) + 0.018 * Math.sin(3 * a + 0.4));
+    return `${i ? "L" : "M"}${(cx + Math.cos(a) * radius).toFixed(2)},${(cy + Math.sin(a) * radius).toFixed(2)}`;
+  }).join("") + "Z";
 }
-
-/** Eight-pointed star (compass rose), embossed into the seal. */
 function star(cx: number, cy: number, outer: number, inner: number): string {
-  const pts: string[] = [];
-  for (let i = 0; i < 16; i++) {
-    const a = (i / 16) * Math.PI * 2 - Math.PI / 2;
-    const r = i % 2 === 0 ? (i % 4 === 0 ? outer : outer * 0.62) : inner;
-    pts.push(`${(cx + Math.cos(a) * r).toFixed(2)},${(cy + Math.sin(a) * r).toFixed(2)}`);
-  }
-  return `M${pts.join("L")}Z`;
+  return Array.from({ length: 16 }, (_, i) => {
+    const a = i * Math.PI / 8 - Math.PI / 2;
+    const r = i % 2 ? inner : i % 4 ? outer * 0.66 : outer;
+    return `${i ? "L" : "M"}${(cx + Math.cos(a) * r).toFixed(2)},${(cy + Math.sin(a) * r).toFixed(2)}`;
+  }).join("") + "Z";
 }
-
-function seal(size: number, scale: number, background: string | null): string {
-  const c = size / 2;
-  const r = (size / 2) * scale;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-
-${background ? `<rect width="${size}" height="${size}" fill="${background}"/>` : ""}
-<path d="${sealPath(c, c, r, r * 0.045)}" fill="#a8243a"/>
-<ellipse cx="${c - r * 0.25}" cy="${c - r * 0.3}" rx="${r * 0.55}" ry="${r * 0.42}" fill="#d4425a" fill-opacity=".45"/>
-<path d="${sealPath(c, c, r, r * 0.045)}" fill="none" stroke="#6e1222" stroke-width="${r * 0.03}"/>
-<circle cx="${c}" cy="${c}" r="${r * 0.72}" fill="#8e1a2e"/>
-<circle cx="${c}" cy="${c}" r="${r * 0.72}" fill="none" stroke="#e98a99" stroke-opacity=".55" stroke-width="${r * 0.035}"/>
-<circle cx="${c}" cy="${c}" r="${r * 0.64}" fill="none" stroke="#5c0e1b" stroke-opacity=".6" stroke-width="${r * 0.02}"/>
-<path d="${star(c, c, r * 0.5, r * 0.11)}" fill="#f2c3ca" fill-opacity=".92"/>
-<circle cx="${c}" cy="${c}" r="${r * 0.07}" fill="#8e1a2e"/>
-</svg>`;
+const defs = "";
+function mark(cx: number, cy: number, r: number, glyph = "star", simple = false): string {
+  const shape = outline(cx, cy, r);
+  const s = r / 100;
+  let symbol = `<path d="${star(cx, cy, r * .53, r * (simple ? .19 : .13))}"/>`;
+  if (glyph === "calendar") symbol = `<path d="M${cx-36*s} ${cy-30*s}h${72*s}v${65*s}h${-72*s}z M${cx-27*s} ${cy-3*s}v${29*s}h${54*s}v${-29*s}z" fill="#f7d5c9" fill-rule="evenodd"/><path d="M${cx-25*s} ${cy-40*s}h${10*s}v${25*s}h${-10*s}z M${cx+15*s} ${cy-40*s}h${10*s}v${25*s}h${-10*s}z" fill="#f7d5c9"/>`;
+  if (glyph === "bookmark") symbol = `<path d="M${cx-26*s} ${cy-39*s}h${52*s}v${80*s}l${-26*s} ${-18*s}l${-26*s} ${18*s}z"/>`;
+  if (glyph === "suggest") symbol = `<path d="M${cx-38*s} ${cy-6*s}h${32*s}v${-32*s}h${12*s}v${32*s}h${32*s}v${12*s}h${-32*s}v${32*s}h${-12*s}v${-32*s}h${-32*s}z" fill="#f7d5c9"/>`;
+  return `<path d="${shape}" fill="#b3263b" stroke="#7a1424" stroke-width="${r*.035}"/><circle cx="${cx}" cy="${cy+r*.025}" r="${r*.78}" fill="#7a1424"/><circle cx="${cx}" cy="${cy}" r="${r*.76}" fill="#9d2133" stroke="#711320" stroke-width="${r*.035}"/><circle cx="${cx}" cy="${cy-r*.012}" r="${r*.76}" fill="none" stroke="#f68d92" stroke-opacity=".48" stroke-width="${r*.018}"/>${simple ? "" : `<path d="M${cx-r*.66} ${cy-r*.57} Q${cx} ${cy-r*.99} ${cx+r*.57} ${cy-r*.66}" fill="none" stroke="#ffafb0" stroke-opacity=".48" stroke-linecap="round" stroke-width="${r*.035}"/>`}<g color="#ffe0cf" fill="#f7d5c9">${symbol}</g>`;
 }
-
-function badge(size: number): string {
-  const c = size / 2;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-<path d="${star(c, c, size * 0.46, size * 0.1)}" fill="#fff"/></svg>`;
+function svg(size: number, radius: number, bg = "", glyph = "star", simple = false): string {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${defs}${bg ? `<rect width="100%" height="100%" fill="${bg}"/>` : ""}${mark(size/2,size/2,radius,glyph,simple)}</svg>`;
 }
-
-const BG = "#13221c";
-const files: [string, string][] = [
-  ["icon.svg", seal(512, 0.86, null)],
-  ["icon-any.svg", seal(512, 0.9, null)],
-  ["icon-maskable.svg", seal(512, 0.62, BG)],
-  ["icon-apple.svg", seal(180, 0.74, BG)],
-  ["badge.svg", badge(96)],
-];
-for (const [name, svg] of files) writeFileSync(join(out, name), svg);
-
-const run = (args: string[]) => {
-  const p = Bun.spawnSync(["magick", "-background", "none", ...args]);
-  if (p.exitCode !== 0) throw new Error(p.stderr.toString());
-};
-run([join(out, "icon-any.svg"), "-resize", "192x192", join(out, "icon-192.png")]);
-run([join(out, "icon-any.svg"), "-resize", "512x512", join(out, "icon-512.png")]);
-run([join(out, "icon-maskable.svg"), "-resize", "512x512", join(out, "icon-maskable-512.png")]);
-run([join(out, "icon-apple.svg"), "-resize", "180x180", join(out, "apple-touch-icon.png")]);
-run([join(out, "badge.svg"), "-resize", "96x96", join(out, "badge-96.png")]);
-run([join(out, "icon-any.svg"), "-define", "icon:auto-resize=48,32,16", join(out, "favicon.ico")]);
-console.log("Icons written to", out);
+function run(args: string[]): void {
+  const p = Bun.spawnSync(args, { stdout: "pipe", stderr: "pipe" });
+  if (p.exitCode !== 0) throw new Error(`${args[0]}: ${p.stderr.toString()}`);
+}
+function png(name: string, content: string, width: number, height = width): void {
+  const source = join(temp, "render.svg");
+  writeFileSync(source, content);
+  run(["magick", "-background", "none", "-density", "288", source, "-resize", `${width}x${height}!`, join(out, name)]);
+}
+try {
+  const master = svg(512, 225);
+  writeFileSync(join(out, "icon.svg"), master);
+  for (const size of [192,512]) png(`icon-${size}.png`, svg(size, size * 225 / 512), size);
+  png("icon-maskable-512.png", svg(512, 191, "#13221c"), 512);
+  png("apple-touch-icon.png", svg(180, 72, "#13221c"), 180);
+  for (const size of [16,32,48]) png(size === 48 ? "favicon-48.tmp.png" : `favicon-${size}.png`, svg(size, size*.46, "", "star", true), size);
+  run(["magick", join(out,"favicon-16.png"), join(out,"favicon-32.png"), join(out,"favicon-48.tmp.png"), join(out,"favicon.ico")]);
+  rmSync(join(out,"favicon-48.tmp.png"));
+  png("badge-96.png", `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96"><path fill-rule="evenodd" d="${outline(48, 48, 42)} ${star(48, 48, 30, 8)}" fill="white"/></svg>`, 96);
+  for (const glyph of ["calendar", "bookmark", "suggest"]) png(`shortcut-${glyph}.png`, svg(96, 43, "", glyph), 96);
+  const og = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">${defs}<rect width="1200" height="630" fill="#101c17"/><path d="M0 510 Q300 400 600 540 T1200 465 V630 H0Z" fill="#13221c"/><path d="M85 80 H1115 M85 550 H1115" stroke="#d6ad5c" stroke-opacity=".45" stroke-width="2"/>${mark(245,310,145)}</svg>`;
+  png("og-image.png", og, 1200, 630);
+  const fraunces = join(root, "node_modules/@fontsource-variable/fraunces/files/fraunces-latin-soft-normal.woff2");
+  const inter = join(root, "node_modules/@fontsource-variable/inter-tight/files/inter-tight-latin-wght-normal.woff2");
+  run(["magick", join(out,"og-image.png"), "-font", fraunces, "-fill", "#ece6d4", "-pointsize", "72", "-annotate", "+450+295", "LARP-Kalender", "-font", inter, "-fill", "#d6ad5c", "-pointsize", "27", "-annotate", "+453+352", "Kommende LARP-Veranstaltungen mit Anmeldelinks", join(out,"og-image.png")]);
+  console.log("Icons written to", out);
+} finally { rmSync(temp, { recursive: true, force: true }); }

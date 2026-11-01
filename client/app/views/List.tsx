@@ -11,13 +11,14 @@ import {
   eventsStore,
   favoritesStore,
   filtersStore,
+  countWithoutLocation,
   loadEvents,
+  originLabel,
   positionStore,
-  requestPosition,
   type Filters,
 } from "../state.ts";
+import { RadiusChip, RadiusPicker } from "./Radius.tsx";
 import { Sheet } from "./Sheet.tsx";
-import { toast } from "../toast.tsx";
 
 let stamped = false;
 
@@ -36,7 +37,12 @@ export function ListView() {
   }, [loc.query]);
 
   const visible = useMemo(() => applyFilters(events, filters, position), [events, filters, position]);
-  const groups = useMemo(() => groupByMonth(visible), [visible]);
+  const byDistance = !!filters.sortByDistance && !!position;
+  const groups = useMemo(
+    () => (byDistance ? [{ key: "distance", label: "Nach Entfernung", events: visible }] : groupByMonth(visible)),
+    [visible, byDistance],
+  );
+  const withoutLocation = useMemo(() => countWithoutLocation(events, filters, position), [events, filters, position]);
   const active = activeFilterCount(filters);
 
   useEffect(() => {
@@ -70,7 +76,15 @@ export function ListView() {
             {active ? <span class="count">{active}</span> : null}
           </button>
         </div>
-        <div class="chips" role="group" aria-label="Genres">
+        <div class="chips" role="group" aria-label="Schnellfilter">
+          <button
+            class={`chip chip-radius${filters.radiusKm && position ? " is-on" : ""}`}
+            aria-pressed={!!(filters.radiusKm && position)}
+            onClick={() => setSheetOpen(true)}
+          >
+            <Icon name="pin" size={16} />
+            {filters.radiusKm && position ? `${filters.radiusKm} km · ${originLabel(position, "nom").split(",")[0]}` : "Umkreis"}
+          </button>
           {(Object.keys(GENRES) as Genre[])
             .filter((g) => g !== "other")
             .map((g) => (
@@ -96,6 +110,8 @@ export function ListView() {
           </button>
         ) : null}
       </div>
+
+      <RadiusChip hiddenWithoutLocation={withoutLocation} />
 
       {error ? (
         <EmptyState title="Keine Verbindung">
@@ -127,7 +143,7 @@ export function ListView() {
       <div class="months" ref={listRef}>
         {groups.map((g) => (
           <section class="month" key={g.key} aria-label={g.label}>
-            <h2 class="month-head">{g.label}</h2>
+            {byDistance ? null : <h2 class="month-head">{g.label}</h2>}
             <div class="cards">
               {g.events.map((e) => (
                 <EventCard key={e.id} event={e} today={today} favorite={favorites.includes(e.id)} position={position} />
@@ -143,26 +159,15 @@ export function ListView() {
 }
 
 function FilterSheet({ filters, onClose, count }: { filters: Filters; onClose: () => void; count: number }) {
-  const position = useStore(positionStore);
   const set = (patch: Partial<Filters>) => filtersStore.set((f) => ({ ...f, ...patch }));
   const toggle = (key: "types" | "countries", value: string) =>
     filtersStore.set((f) => ({ ...f, [key]: f[key].includes(value) ? f[key].filter((x) => x !== value) : [...f[key], value] }));
-
-  const pickRadius = async (km: number | null) => {
-    if (km && !position) {
-      const ok = await requestPosition();
-      if (!ok) {
-        toast("Standort nicht verfügbar. Erlaube den Zugriff im Browser.");
-        return;
-      }
-    }
-    set({ radiusKm: km });
-  };
 
   return (
     <Sheet title="Filter" onClose={onClose}>
       {(close) => (
         <div class="filter-sheet">
+          <RadiusPicker />
           <fieldset>
             <legend>Anmeldung</legend>
             <label class="switch">
@@ -183,24 +188,6 @@ function FilterSheet({ filters, onClose, count }: { filters: Filters; onClose: (
                 </button>
               ))}
             </div>
-          </fieldset>
-          <fieldset>
-            <legend>Umkreis</legend>
-            <div class="chips wrap">
-              {[null, 50, 100, 200, 400].map((km) => (
-                <button key={String(km)} class={`chip${filters.radiusKm === km ? " is-on" : ""}`} aria-pressed={filters.radiusKm === km} onClick={() => void pickRadius(km)}>
-                  {km ? `${km} km` : "Überall"}
-                </button>
-              ))}
-            </div>
-            <p class="hint">
-              {position ? "Dein ungefährer Standort bleibt auf diesem Gerät." : "Für den Umkreis wird einmalig dein Standort abgefragt."}
-              {position ? (
-                <button class="link-btn" onClick={() => void requestPosition().then((ok) => toast(ok ? "Standort aktualisiert" : "Standort nicht verfügbar"))}>
-                  Standort aktualisieren
-                </button>
-              ) : null}
-            </p>
           </fieldset>
           <fieldset>
             <legend>Land</legend>

@@ -33,9 +33,9 @@ const manifest = {
     { src: "/icons/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
   ],
   shortcuts: [
-    { name: "Kalender", url: "/kalender", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
-    { name: "Merkliste", url: "/merkliste", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
-    { name: "Veranstaltung vorschlagen", url: "/vorschlagen", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
+    { name: "Kalender", url: "/kalender", icons: [{ src: "/icons/shortcut-calendar.png", sizes: "96x96", type: "image/png" }] },
+    { name: "Merkliste", url: "/merkliste", icons: [{ src: "/icons/shortcut-bookmark.png", sizes: "96x96", type: "image/png" }] },
+    { name: "Veranstaltung vorschlagen", url: "/vorschlagen", icons: [{ src: "/icons/shortcut-suggest.png", sizes: "96x96", type: "image/png" }] },
   ],
 };
 

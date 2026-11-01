@@ -59,24 +59,65 @@ export interface Filters {
   openOnly: boolean;
   radiusKm: number | null;
   onlyNew: boolean;
+  /** Sort by distance to the chosen centre instead of by date. */
+  sortByDistance?: boolean;
 }
 
-export const emptyFilters: Filters = { q: "", genres: [], types: [], countries: [], openOnly: false, radiusKm: null, onlyNew: false };
+export const emptyFilters: Filters = {
+  q: "",
+  genres: [],
+  types: [],
+  countries: [],
+  openOnly: false,
+  radiusKm: null,
+  onlyNew: false,
+  sortByDistance: false,
+};
 export const filtersStore = persistentStore<Filters>("lk.filters", emptyFilters);
 
 export const activeFilterCount = (f: Filters) =>
   f.genres.length + f.types.length + f.countries.length + (f.openOnly ? 1 : 0) + (f.radiusKm ? 1 : 0) + (f.onlyNew ? 1 : 0);
 
-/* ---------- position (rounded, stays on the device) ---------- */
+/* ---------- radius centre: device position or a chosen place (rounded, stays on the device) ---------- */
 
-export const positionStore = persistentStore<{ lat: number; lng: number } | null>("lk.position", null);
+export interface Origin {
+  lat: number;
+  lng: number;
+  /** "Mein Standort" or the chosen place, e.g. "50667, Köln, Nordrhein-Westfalen". */
+  label?: string;
+  source?: "device" | "place";
+}
+
+export const positionStore = persistentStore<Origin | null>("lk.position", null);
+
+/** Label for the radius centre; the device position is phrased in the grammatical case of the sentence. */
+export function originLabel(o: Origin | null, kasus: "nom" | "acc" | "dat" = "dat"): string {
+  if (o?.source === "place" && o.label) return o.label.split(", ").slice(0, 2).join(", ");
+  return { nom: "Mein Standort", acc: "deinen Standort", dat: "deinem Standort" }[kasus];
+}
+
+export function setPlace(place: { label: string; lat: number; lng: number }): void {
+  positionStore.set({ lat: place.lat, lng: place.lng, label: place.label, source: "place" });
+}
+
+export async function searchPlaces(q: string): Promise<{ label: string; lat: number; lng: number }[]> {
+  const res = await fetch(`/api/places?q=${encodeURIComponent(q)}`);
+  const body = (await res.json()) as { places?: { label: string; lat: number; lng: number }[]; error?: string };
+  if (!res.ok) throw new Error(body.error ?? "Ortssuche fehlgeschlagen.");
+  return body.places ?? [];
+}
 
 export function requestPosition(): Promise<boolean> {
   return new Promise((resolve) => {
     if (!("geolocation" in navigator)) return resolve(false);
     navigator.geolocation.getCurrentPosition(
       (p) => {
-        positionStore.set({ lat: Math.round(p.coords.latitude * 100) / 100, lng: Math.round(p.coords.longitude * 100) / 100 });
+        positionStore.set({
+          lat: Math.round(p.coords.latitude * 100) / 100,
+          lng: Math.round(p.coords.longitude * 100) / 100,
+          label: "Mein Standort",
+          source: "device",
+        });
         resolve(true);
       },
       () => resolve(false),
@@ -107,10 +148,10 @@ export const isNew = (e: LarpEvent) => e.createdAt > newSince;
 
 /* ---------- filtering ---------- */
 
-export function applyFilters(events: LarpEvent[], f: Filters, position: { lat: number; lng: number } | null): LarpEvent[] {
+export function applyFilters(events: LarpEvent[], f: Filters, position: Origin | null): LarpEvent[] {
   const terms = f.q.trim().toLowerCase().split(/\s+/).filter(Boolean);
   const weekAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
-  return events.filter((e) => {
+  const result = events.filter((e) => {
     if (f.genres.length && !e.genres.some((g) => f.genres.includes(g))) return false;
     if (f.types.length && !f.types.includes(e.eventType)) return false;
     if (f.countries.length && !f.countries.includes(e.country)) return false;
@@ -126,6 +167,17 @@ export function applyFilters(events: LarpEvent[], f: Filters, position: { lat: n
     }
     return true;
   });
+  if (f.sortByDistance && position) {
+    const d = (e: LarpEvent) => (e.lat == null || e.lng == null ? Infinity : distanceKm(position, { lat: e.lat, lng: e.lng }));
+    return result.map((e) => [e, d(e)] as const).sort((a, b) => a[1] - b[1] || a[0].startDate.localeCompare(b[0].startDate)).map(([e]) => e);
+  }
+  return result;
+}
+
+/** Events hidden by the radius filter only because their location has no coordinates yet. */
+export function countWithoutLocation(events: LarpEvent[], f: Filters, position: Origin | null): number {
+  if (!f.radiusKm || !position) return 0;
+  return applyFilters(events, { ...f, radiusKm: null, sortByDistance: false }, null).filter((e) => e.lat == null || e.lng == null).length;
 }
 
 export { applyTheme, themeStore, type Theme } from "../lib/theme.ts";

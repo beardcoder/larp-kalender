@@ -1515,3 +1515,84 @@ legend {
     animation-duration: 0.01ms !important;
   }
 }
+
+/* ---------- radius search ---------- */
+
+.chip-radius {
+  gap: 6px;
+}
+.chip-radius.is-on {
+  background: color-mix(in srgb, var(--brass) 18%, var(--bg-raised));
+  border-color: color-mix(in srgb, var(--brass) 60%, transparent);
+  color: var(--ink);
+}
+.radius-origin {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.search.small {
+  height: 46px;
+}
+.place-results {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 4px;
+  border-radius: var(--radius-m);
+  border: 1px solid var(--line-strong);
+  background: var(--bg-raised);
+}
+.place-results button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--radius-s);
+  background: transparent;
+  text-align: left;
+}
+.place-results button:hover,
+.place-results button:focus-visible {
+  background: var(--bg-hover);
+}
+.place-results .icon {
+  color: var(--brass);
+}
+.chip:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.radius-chip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin: 10px 0 0;
+  padding: 6px 6px 6px 12px;
+  border-radius: var(--radius-m);
+  background: color-mix(in srgb, var(--brass) 12%, var(--bg-raised));
+  border: 1px solid color-mix(in srgb, var(--brass) 40%, transparent);
+  font-size: 0.9rem;
+}
+.radius-chip > span {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.radius-chip .icon {
+  color: var(--brass);
+}
+.radius-chip small {
+  flex-basis: 100%;
+  color: var(--ink-faint);
+  padding-bottom: 4px;
+}
+.icon-btn.small {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}

@@ -7,6 +7,7 @@ import { join, normalize } from "node:path";
 import { z } from "zod";
 import type { Config } from "./config.ts";
 import { renderCsv, renderIcs, renderRss } from "./feeds.ts";
+import { PlaceSearch } from "./geocode.ts";
 import { DEFAULT_DESCRIPTION, eventMeta, renderShell, type PageMeta } from "./html.ts";
 import { createMcpServer } from "./mcp.ts";
 import {
@@ -124,6 +125,8 @@ export function startServer(app: App, cfg: Config) {
   const registerLimiter = new RateLimiter(20, 60 * 60_000);
   const pushLimiter = new RateLimiter(30, 60 * 60_000);
   const pushTestLimiter = new RateLimiter(5, 60 * 60_000);
+  const placeLimiter = new RateLimiter(60, 60 * 60_000);
+  const places = new PlaceSearch(cfg.contactEmail);
   const clientIp = new WeakMap<Request, string>();
   const ipOf = (req: Request) => clientIp.get(req) ?? "unknown";
 
@@ -220,6 +223,7 @@ export function startServer(app: App, cfg: Config) {
     title,
     description,
     url: baseUrl(request) + new URL(request.url).pathname,
+    defaultImage: `${baseUrl(request)}/icons/og-image.png`,
   });
 
   /* ---------- admin API ---------- */
@@ -479,6 +483,22 @@ export function startServer(app: App, cfg: Config) {
       } catch (e) {
         set.status = 400;
         return { error: (e as Error).message };
+      }
+    })
+    // Place search for the radius filter (PLZ or town -> coordinates).
+    .get("/places", async ({ request, query, set }) => {
+      const q = String((query as Record<string, string>).q ?? "");
+      if (q.trim().length < 2) return { places: [] };
+      if (!placeLimiter.allow(ipOf(request))) {
+        set.status = 429;
+        return { error: "Zu viele Suchanfragen. Bitte später erneut versuchen." };
+      }
+      try {
+        return { places: await places.search(q) };
+      } catch (err) {
+        console.warn("[places]", (err as Error).message);
+        set.status = 502;
+        return { error: "Ortssuche gerade nicht erreichbar." };
       }
     })
     .get("/push/key", () => ({ publicKey: app.push.publicKey }))

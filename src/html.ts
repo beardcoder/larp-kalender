@@ -12,6 +12,7 @@ export interface PageMeta {
   description: string;
   url: string;
   image?: string | null;
+  defaultImage?: string;
 }
 
 export const DEFAULT_DESCRIPTION =
@@ -24,6 +25,7 @@ export function eventMeta(e: LarpEvent, base: string): PageMeta {
     description: [formatDateRange(e.startDate, e.endDate), place, e.summary].filter(Boolean).join(" · ").slice(0, 300),
     url: `${base}/termin/${e.slug}`,
     image: e.imageUrl,
+    defaultImage: `${base}/icons/og-image.png`,
   };
 }
 
@@ -38,7 +40,9 @@ export function renderShell(template: string, meta: PageMeta, allowIndexing: boo
     `<meta property="og:title" content="${escapeHtml(meta.title)}">`,
     `<meta property="og:description" content="${escapeHtml(meta.description)}">`,
     `<meta property="og:url" content="${escapeHtml(meta.url)}">`,
-    meta.image ? `<meta property="og:image" content="${escapeHtml(meta.image)}">` : "",
+    meta.image || meta.defaultImage ? `<meta property="og:image" content="${escapeHtml((meta.image || meta.defaultImage)!)}">` : "",
+    !meta.image && meta.defaultImage ? `<meta property="og:image:width" content="1200">\n<meta property="og:image:height" content="630">` : "",
+    `<meta name="twitter:card" content="summary_large_image">`,
     `<link rel="alternate" type="application/rss+xml" title="Neue LARP-Veranstaltungen" href="/feed.xml">`,
     `<link rel="alternate" type="text/calendar" title="LARP-Kalender (iCal)" href="/kalender.ics">`,
     preload !== undefined

@@ -8,7 +8,8 @@ Live: https://larp.letsbenow.de (not indexed by search engines)
 ## Features
 
 - **Public PWA** (German): agenda list grouped by month, month calendar, event detail sheet, genre/type/country
-  filters, radius search (device location stays on the device), bookmarks, "new since last visit" markers,
+  filters, radius search around a postcode/town (`/api/places`, proxied to OpenStreetMap Nominatim with cache
+  and 1 req/s throttle) or the device location, optional sorting by distance, bookmarks, "new since last visit" markers,
   offline support, installable, web push (new events per genre, reminders for bookmarked events: registration
   opens, deadline in ≤3 days, start in ≤7 days, cancellation), event suggestion form (lands as draft).
 - **Calendar export**: subscribable iCal feed `/kalender.ics` (filters `genre`, `type`, `country`,
@@ -73,7 +74,8 @@ bun run build              # dist/public + dist/larp-kalender (single binary)
 CLI: `larp-kalender serve | health | user:create <email> <name> [admin|editor] | user:password <email>`
 (password via `PASSWORD` env).
 
-Icons are generated with `bun scripts/make-icons.ts` (needs ImageMagick).
+Icons (favicons, app/maskable/Apple icons, notification badge, shortcut icons, `og-image.png`) are generated
+with `bun scripts/make-icons.ts` (needs ImageMagick).
 
 ## Deployment
 

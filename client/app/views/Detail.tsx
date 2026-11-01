@@ -6,7 +6,7 @@ import { useStore } from "../../lib/store.ts";
 import { pop } from "../../lib/motion.ts";
 import { back, useLocation } from "../../lib/router.ts";
 import { copyText, GenreTags, Icon, placeLine, Seal, StatusText } from "../components.tsx";
-import { distanceKm, eventsStore, favoritesStore, positionStore, toggleFavorite } from "../state.ts";
+import { distanceKm, eventsStore, favoritesStore, originLabel, positionStore, toggleFavorite } from "../state.ts";
 import { toast } from "../toast.tsx";
 import { Sheet } from "./Sheet.tsx";
 
@@ -230,7 +230,7 @@ export function DetailView({ slug }: { slug: string }) {
                 <dd>
                   {address || placeLine(e)}
                   <span class="sub">
-                    {[e.region, km !== null ? `etwa ${km} km entfernt` : ""].filter(Boolean).join(" · ")}
+                    {[e.region, km !== null ? `etwa ${km} km von ${originLabel(position)}` : ""].filter(Boolean).join(" · ")}
                     {mapQuery ? (
                       <>
                         {" "}
