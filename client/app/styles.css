@@ -1689,3 +1689,41 @@ legend {
   background: var(--bg-hover);
   color: var(--ink);
 }
+
+/* ---------- pull to refresh ---------- */
+
+.ptr {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 8px);
+  left: 50%;
+  z-index: 45;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--bg-raised);
+  border: 1px solid var(--line-strong);
+  color: var(--ink-muted);
+  box-shadow: var(--shadow);
+  opacity: 0;
+  transform: translate(-50%, -56px);
+  pointer-events: none;
+}
+.ptr.is-settling {
+  transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.2s;
+}
+.ptr.is-armed {
+  color: var(--accent-ink);
+  background: var(--cta-gradient);
+  border-color: transparent;
+  box-shadow: var(--glow);
+}
+.ptr.is-busy svg {
+  animation: ptr-spin 0.7s linear infinite;
+}
+@keyframes ptr-spin {
+  to {
+    rotate: 360deg;
+  }
+}

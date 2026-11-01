@@ -5,6 +5,8 @@ import { App } from "./App.tsx";
 import { startPushSync } from "./push.ts";
 import { loadAccount } from "./account.ts";
 import { applyTheme, eventsStore, loadEvents, markVisited, themeStore } from "./state.ts";
+import { setupPullToRefresh, updateApp } from "../lib/pull-refresh.ts";
+import { toast } from "./toast.tsx";
 
 try {
   const preload = document.getElementById("preload");
@@ -21,6 +23,14 @@ render(<App />, root);
 void loadEvents();
 void loadAccount();
 markVisited();
+
+// Pull down at the top of the page to reload data and pick up new app versions (PWA has no reload button).
+setupPullToRefresh(async () => {
+  await Promise.all([loadEvents(), loadAccount()]);
+  if (await updateApp()) return;
+  const { error, offline } = eventsStore.get();
+  toast(offline ? "Offline – zeige gespeicherte Termine" : error ? "Aktualisieren fehlgeschlagen" : "Termine aktualisiert");
+});
 
 // Refresh when the app comes back to the foreground after a while.
 let lastLoad = Date.now();
