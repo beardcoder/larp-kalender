@@ -1,0 +1,35 @@
+# Standalone deployment behind the Coolify Traefik proxy (network "coolify"). Production uses the Coolify app instead.
+services:
+  larp-kalender:
+    build: .
+    image: larp-kalender:latest
+    container_name: larp-kalender
+    restart: unless-stopped
+    environment:
+      PUBLIC_URL: https://${DOMAIN:-larp.letsbenow.de}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?ADMIN_EMAIL required}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD required}
+      CONTACT_EMAIL: ${CONTACT_EMAIL:-${ADMIN_EMAIL}}
+    volumes:
+      - data:/data
+    mem_limit: 192m
+    networks:
+      - coolify
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=coolify
+      - traefik.http.services.larp-kalender.loadbalancer.server.port=3000
+      - traefik.http.routers.larp-kalender-http.entrypoints=http
+      - traefik.http.routers.larp-kalender-http.rule=Host(`${DOMAIN:-larp.letsbenow.de}`)
+      - traefik.http.routers.larp-kalender-http.middlewares=redirect-to-https
+      - traefik.http.routers.larp-kalender-https.entrypoints=https
+      - traefik.http.routers.larp-kalender-https.rule=Host(`${DOMAIN:-larp.letsbenow.de}`)
+      - traefik.http.routers.larp-kalender-https.tls=true
+      - traefik.http.routers.larp-kalender-https.tls.certresolver=letsencrypt
+
+volumes:
+  data:
+
+networks:
+  coolify:
+    external: true

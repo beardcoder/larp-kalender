@@ -1,0 +1,106 @@
+import { useStore } from "../lib/store.ts";
+import { useLocation } from "../lib/router.ts";
+import { EmptyState, Icon, type IconName } from "./components.tsx";
+import { eventsStore, favoritesStore } from "./state.ts";
+import { Toasts } from "./toast.tsx";
+import { CalendarView } from "./views/Calendar.tsx";
+import { DetailView } from "./views/Detail.tsx";
+import { FavoritesView } from "./views/Favorites.tsx";
+import { ListView } from "./views/List.tsx";
+import { MoreView } from "./views/More.tsx";
+import { SuggestView } from "./views/Suggest.tsx";
+
+const TABS: { path: string; label: string; icon: IconName }[] = [
+  { path: "/", label: "Termine", icon: "list" },
+  { path: "/kalender", label: "Kalender", icon: "calendar" },
+  { path: "/merkliste", label: "Merkliste", icon: "bookmark" },
+  { path: "/mehr", label: "Mehr", icon: "more" },
+];
+
+function View({ path }: { path: string }) {
+  switch (path) {
+    case "/":
+      return <ListView />;
+    case "/kalender":
+      return <CalendarView />;
+    case "/merkliste":
+      return <FavoritesView />;
+    case "/mehr":
+      return <MoreView />;
+    case "/vorschlagen":
+      return <SuggestView />;
+    default:
+      return (
+        <section class="view">
+          <EmptyState title="Seite nicht gefunden">
+            <p>Diese Adresse gibt es im LARP-Kalender nicht.</p>
+            <a class="btn" href="/">
+              Zu den Terminen
+            </a>
+          </EmptyState>
+        </section>
+      );
+  }
+}
+
+function Brand() {
+  return (
+    <a class="brand" href="/" aria-label="LARP-Kalender, zur Startseite">
+      <img src="/icons/icon.svg" alt="" width="34" height="34" />
+      <span>LARP-Kalender</span>
+    </a>
+  );
+}
+
+export function App() {
+  const loc = useLocation();
+  const favorites = useStore(favoritesStore);
+  const { offline } = useStore(eventsStore);
+  const detail = loc.path.match(/^\/termin\/([^/]+)\/?$/);
+  const basePath = detail ? new URL(loc.background ?? "/", location.origin).pathname : loc.path;
+  const active = (p: string) => (p === "/" ? basePath === "/" : basePath.startsWith(p));
+
+  return (
+    <div class="shell">
+      <aside class="sidebar">
+        <Brand />
+        <nav class="side-nav" aria-label="Hauptnavigation">
+          {TABS.map((t) => (
+            <a key={t.path} href={t.path} class={active(t.path) ? "is-active" : ""} aria-current={active(t.path) ? "page" : undefined}>
+              <Icon name={t.icon} />
+              <span>{t.label}</span>
+              {t.path === "/merkliste" && favorites.length ? <span class="badge">{favorites.length}</span> : null}
+            </a>
+          ))}
+        </nav>
+        <a class="btn ghost side-suggest" href="/vorschlagen">
+          <Icon name="plus" size={18} /> Termin vorschlagen
+        </a>
+      </aside>
+
+      <div class="topbar">
+        <Brand />
+        {offline ? <span class="offline">Offline</span> : null}
+      </div>
+
+      <main class="main" id="main">
+        <View path={basePath} />
+      </main>
+
+      <nav class="tabbar" aria-label="Hauptnavigation">
+        {TABS.map((t) => (
+          <a key={t.path} href={t.path} class={active(t.path) ? "is-active" : ""} aria-current={active(t.path) ? "page" : undefined}>
+            <span class="tab-icon">
+              <Icon name={t.icon} size={22} />
+              {t.path === "/merkliste" && favorites.length ? <span class="dot" /> : null}
+            </span>
+            <span>{t.label}</span>
+          </a>
+        ))}
+      </nav>
+
+      {detail ? <DetailView key={detail[1]} slug={decodeURIComponent(detail[1]!)} /> : null}
+      <Toasts />
+    </div>
+  );
+}
