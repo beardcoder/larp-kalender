@@ -189,4 +189,38 @@ describe("http", async () => {
     });
     expect(res.status).toBe(400);
   });
+
+  test("members: frontend account, synced bookmarks, private feed, no staff access", async () => {
+    const h = { "content-type": "application/json", "x-requested-with": "larp-kalender" };
+    const reg = await fetch(`${base}/api/account/register`, {
+      method: "POST",
+      headers: h,
+      body: JSON.stringify({ email: "spieler@example.org", name: "Spieler", password: "langes-passwort" }),
+    });
+    expect(reg.status).toBe(201);
+    const cookie = reg.headers.get("set-cookie")!.split(";")[0]!;
+    const { user, feedToken } = await reg.json();
+    expect(user.role).toBe("member");
+
+    const event = (await (await fetch(`${base}/api/events`)).json()).events[0];
+    const fav = await (await fetch(`${base}/api/account/favorites`, { method: "PUT", headers: { ...h, cookie }, body: JSON.stringify({ ids: [event.id, 99999] }) })).json();
+    expect(fav.favorites).toEqual([event.id]);
+    const ics = await (await fetch(`${base}/kalender.ics?feed=${feedToken}`)).text();
+    expect(ics).toContain(`UID:event-${event.id}@`);
+
+    // Same login, but no access to the backend or MCP.
+    expect((await fetch(`${base}/api/admin/me`, { headers: { cookie } })).status).toBe(403);
+    const adminLogin = await fetch(`${base}/api/admin/login`, {
+      method: "POST",
+      headers: h,
+      body: JSON.stringify({ email: "spieler@example.org", password: "langes-passwort" }),
+    });
+    expect(adminLogin.status).toBe(403);
+    // Staff accounts can sign in to the frontend as well.
+    const staff = await fetch(`${base}/api/account/login`, { method: "POST", headers: h, body: JSON.stringify({ email: "a@b.de", password: "passwort-123" }) });
+    expect((await staff.json()).staff).toBe(true);
+    // Cross-site form posts are rejected.
+    const csrf = await fetch(`${base}/api/account/favorites`, { method: "PUT", headers: { cookie, "content-type": "application/json" }, body: "{}" });
+    expect(csrf.status).toBe(403);
+  });
 });

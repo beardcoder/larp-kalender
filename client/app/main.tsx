@@ -3,6 +3,7 @@ import "./styles.css";
 import { interceptLinks } from "../lib/router.ts";
 import { App } from "./App.tsx";
 import { startPushSync } from "./push.ts";
+import { loadAccount } from "./account.ts";
 import { applyTheme, eventsStore, loadEvents, markVisited, themeStore } from "./state.ts";
 
 try {
@@ -18,6 +19,7 @@ interceptLinks(root);
 render(<App />, root);
 
 void loadEvents();
+void loadAccount();
 markVisited();
 
 // Refresh when the app comes back to the foreground after a while.

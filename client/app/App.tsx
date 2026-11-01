@@ -2,6 +2,7 @@ import { useStore } from "../lib/store.ts";
 import { useLocation } from "../lib/router.ts";
 import { EmptyState, Icon, type IconName } from "./components.tsx";
 import { eventsStore, favoritesStore } from "./state.ts";
+import { accountStore } from "./account.ts";
 import { Toasts } from "./toast.tsx";
 import { CalendarView } from "./views/Calendar.tsx";
 import { DetailView } from "./views/Detail.tsx";
@@ -56,6 +57,12 @@ export function App() {
   const loc = useLocation();
   const favorites = useStore(favoritesStore);
   const { offline } = useStore(eventsStore);
+  const account = useStore(accountStore);
+  const accountLink = (
+    <a class="account-link" href="/mehr#konto" aria-label={account ? `Konto: ${account.user.name}` : "Anmelden"}>
+      {account ? <span class="avatar small">{account.user.name.slice(0, 1).toUpperCase()}</span> : <span>Anmelden</span>}
+    </a>
+  );
   const detail = loc.path.match(/^\/termin\/([^/]+)\/?$/);
   const basePath = detail ? new URL(loc.background ?? "/", location.origin).pathname : loc.path;
   const active = (p: string) => (p === "/" ? basePath === "/" : basePath.startsWith(p));
@@ -76,11 +83,29 @@ export function App() {
         <a class="btn ghost side-suggest" href="/vorschlagen">
           <Icon name="plus" size={18} /> Termin vorschlagen
         </a>
+        {account !== undefined ? (
+          <a class="side-account" href="/mehr#konto">
+            {account ? (
+              <>
+                <span class="avatar small">{account.user.name.slice(0, 1).toUpperCase()}</span>
+                <span>{account.user.name}</span>
+              </>
+            ) : (
+              <>
+                <Icon name="users" size={18} />
+                <span>Anmelden oder registrieren</span>
+              </>
+            )}
+          </a>
+        ) : null}
       </aside>
 
       <div class="topbar">
         <Brand />
-        {offline ? <span class="offline">Offline</span> : null}
+        <span class="topbar-end">
+          {offline ? <span class="offline">Offline</span> : null}
+          {account !== undefined ? accountLink : null}
+        </span>
       </div>
 
       <main class="main" id="main">

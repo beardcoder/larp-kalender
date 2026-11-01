@@ -25,7 +25,9 @@ export function navigate(to: string, opts: { replace?: boolean; background?: str
   if (opts.replace) history.replaceState(state, "", to);
   else history.pushState(state, "", to);
   locationStore.set(read());
-  if (!opts.background) window.scrollTo({ top: 0 });
+  const hash = to.split("#")[1];
+  if (hash) setTimeout(() => document.getElementById(hash)?.scrollIntoView({ block: "start" }), 60);
+  else if (!opts.background) window.scrollTo({ top: 0 });
 }
 
 /** Go back if the previous entry belongs to the app, otherwise navigate to the fallback. */

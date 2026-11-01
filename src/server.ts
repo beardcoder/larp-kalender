@@ -55,7 +55,8 @@ import {
 } from "./repo/users.ts";
 import type { App } from "./service.ts";
 import type { User } from "./shared/types.ts";
-import { EVENT_STATUS, EVENT_TYPES, GENRES, REGISTRATION_STATUS, COUNTRIES, USER_ROLES, keys } from "./shared/vocab.ts";
+import { EVENT_STATUS, EVENT_TYPES, GENRES, REGISTRATION_STATUS, COUNTRIES, STAFF_ROLES, USER_ROLES, keys } from "./shared/vocab.ts";
+import { feedToken, getFavorites, setFavorites, userIdByFeedToken } from "./repo/account.ts";
 import pkg from "../package.json" with { type: "json" };
 
 const SESSION_COOKIE = "lk_session";
@@ -260,6 +261,10 @@ export function startServer(app: App, cfg: Config) {
         set.status = 401;
         return { error: "E-Mail oder Passwort ist falsch." };
       }
+      if (!STAFF_ROLES.includes(user.role)) {
+        set.status = 403;
+        return { error: "Dieses Konto hat keinen Zugang zur Redaktion." };
+      }
       set.headers["set-cookie"] = sessionCookie(createSession(db, user.id));
       return { user };
     })
@@ -274,6 +279,11 @@ export function startServer(app: App, cfg: Config) {
       if (!user) {
         set.status = csrfFailed ? 403 : 401;
         return { error: csrfFailed ? "CSRF-Prüfung fehlgeschlagen." : "Nicht angemeldet." };
+      }
+      // Members use the public app only; the backend, tokens and MCP are for staff.
+      if (!STAFF_ROLES.includes(user.role)) {
+        set.status = 403;
+        return { error: "Dieses Konto hat keinen Zugang zur Redaktion." };
       }
     })
     .get("/me", ({ user }) => ({ user }))
@@ -394,7 +404,7 @@ export function startServer(app: App, cfg: Config) {
         return { error: zodMessage(parsed.error) };
       }
       const id = Number(params.id);
-      if (id === user!.id && (parsed.data.role === "editor" || parsed.data.disabled)) {
+      if (id === user!.id && ((parsed.data.role && parsed.data.role !== "admin") || parsed.data.disabled)) {
         set.status = 400;
         return { error: "Du kannst dir selbst keine Adminrechte entziehen." };
       }
@@ -529,6 +539,124 @@ export function startServer(app: App, cfg: Config) {
       return { ok: endpoint ? await app.push.test(endpoint) : false };
     });
 
+  /* ---------- account API (frontend login for all roles) ---------- */
+
+  const registerSchema = z.object({
+    email: z.string().trim().email("Bitte eine gültige E-Mail-Adresse angeben."),
+    name: z.string().trim().min(2, "Name: mindestens 2 Zeichen").max(60),
+    password: z.string().min(10, "Passwort: mindestens 10 Zeichen").max(200),
+    website: z.string().optional(),
+  });
+  const signupLimiter = new RateLimiter(5, 60 * 60_000);
+
+  const account = (user: User) => ({ user, favorites: getFavorites(db, user.id), feedToken: feedToken(db, user.id), staff: STAFF_ROLES.includes(user.role) });
+
+  // All mutating account requests need the custom header (blocks cross-site form posts).
+  const csrfGuard = ({ request, set }: { request: Request; set: { status?: number | string } }) => {
+    if (request.method !== "GET" && request.headers.get("x-requested-with") !== "larp-kalender") {
+      set.status = 403;
+      return { error: "CSRF-Prüfung fehlgeschlagen." };
+    }
+  };
+
+  const accountPublicApi = new Elysia({ prefix: "/api/account" })
+    .onBeforeHandle(csrfGuard)
+    .get("/me", ({ request }) => {
+      const user = sessionUser(db, sessionToken(request));
+      return user ? account(user) : { user: null };
+    })
+    .post("/login", async ({ request, body, set }) => {
+      if (!loginLimiter.allow(ipOf(request))) {
+        set.status = 429;
+        return { error: "Zu viele Anmeldeversuche. Bitte in 15 Minuten erneut versuchen." };
+      }
+      const { email, password } = (body ?? {}) as { email?: string; password?: string };
+      const user = await verifyLogin(db, String(email ?? ""), String(password ?? ""));
+      if (!user) {
+        set.status = 401;
+        return { error: "E-Mail oder Passwort ist falsch." };
+      }
+      set.headers["set-cookie"] = sessionCookie(createSession(db, user.id));
+      return account(user);
+    })
+    .post("/register", async ({ request, body, set }) => {
+      if (!signupLimiter.allow(ipOf(request))) {
+        set.status = 429;
+        return { error: "Zu viele Registrierungen. Bitte später erneut versuchen." };
+      }
+      const parsed = registerSchema.safeParse(body ?? {});
+      if (!parsed.success) {
+        set.status = 400;
+        return { error: zodMessage(parsed.error) };
+      }
+      if (parsed.data.website) return { user: null }; // honeypot
+      try {
+        const user = await createUser(db, { email: parsed.data.email, name: parsed.data.name, password: parsed.data.password, role: "member" });
+        set.headers["set-cookie"] = sessionCookie(createSession(db, user.id));
+        set.status = 201;
+        return account(user);
+      } catch {
+        set.status = 409;
+        return { error: "Für diese E-Mail-Adresse gibt es schon ein Konto. Melde dich an." };
+      }
+    })
+    .post("/logout", ({ request, set }) => {
+      const token = sessionToken(request);
+      if (token) deleteSession(db, token);
+      set.headers["set-cookie"] = sessionCookie("", 0);
+      return { ok: true };
+    });
+
+  const accountApi = new Elysia({ prefix: "/api/account" })
+    .onBeforeHandle(csrfGuard)
+    .resolve(({ request }) => ({ user: sessionUser(db, sessionToken(request)) }))
+    .onBeforeHandle(({ user, set }) => {
+      if (!user) {
+        set.status = 401;
+        return { error: "Nicht angemeldet." };
+      }
+    })
+    .put("/favorites", ({ user, body }) => {
+      const ids = Array.isArray((body as { ids?: unknown })?.ids) ? ((body as { ids: unknown[] }).ids.map(Number) as number[]) : [];
+      return { favorites: setFavorites(db, user!.id, ids) };
+    })
+    .post("/feed-token", ({ user }) => ({ feedToken: feedToken(db, user!.id, true) }))
+    .put("/me", async ({ user, body, set }) => {
+      const b = (body ?? {}) as { name?: string; password?: string; currentPassword?: string };
+      if (b.password) {
+        if (b.password.length < 10) {
+          set.status = 400;
+          return { error: "Passwort: mindestens 10 Zeichen" };
+        }
+        if (!(await verifyLogin(db, user!.email, b.currentPassword ?? ""))) {
+          set.status = 400;
+          return { error: "Das aktuelle Passwort ist falsch." };
+        }
+      }
+      const name = b.name?.trim();
+      if (name !== undefined && (name.length < 2 || name.length > 60)) {
+        set.status = 400;
+        return { error: "Name: 2 bis 60 Zeichen" };
+      }
+      const updated = await updateUser(db, user!.id, { name: name || undefined, password: b.password || undefined });
+      // A password change ends all sessions; keep this device signed in.
+      if (b.password) set.headers["set-cookie"] = sessionCookie(createSession(db, user!.id));
+      return account(updated!);
+    })
+    .delete("/me", async ({ user, body, set }) => {
+      if (STAFF_ROLES.includes(user!.role)) {
+        set.status = 400;
+        return { error: "Redaktionskonten werden im Backend verwaltet." };
+      }
+      if (!(await verifyLogin(db, user!.email, String((body as { password?: string })?.password ?? "")))) {
+        set.status = 400;
+        return { error: "Das Passwort ist falsch." };
+      }
+      deleteUser(db, user!.id);
+      set.headers["set-cookie"] = sessionCookie("", 0);
+      return { ok: true };
+    });
+
   /* ---------- main app ---------- */
 
   const web = new Elysia()
@@ -591,6 +719,11 @@ export function startServer(app: App, cfg: Config) {
           status: 401,
           headers: { "content-type": "application/json", "www-authenticate": wwwAuthenticate(baseUrl(request)) },
         });
+      if (!STAFF_ROLES.includes(user.role))
+        return new Response(JSON.stringify({ error: "forbidden", error_description: "Only editors and administrators can use MCP." }), {
+          status: 403,
+          headers: { "content-type": "application/json" },
+        });
       return handleMcp(request, user);
     })
     // Feeds & exports
@@ -599,6 +732,12 @@ export function startServer(app: App, cfg: Config) {
       const f = filterFromQuery(q);
       // Subscriptions keep recently past events so they do not vanish from calendars right away.
       if (!f.from && !f.includePast) f.from = new Date(Date.now() - 90 * 86_400_000).toISOString().slice(0, 10);
+      // Private bookmark feed of a member account (updates automatically when bookmarks change).
+      if (q.feed) {
+        const userId = userIdByFeedToken(db, q.feed);
+        f.ids = userId ? getFavorites(db, userId) : [];
+        if (!f.ids.length) f.ids = [-1];
+      }
       const name = q.name?.slice(0, 60) || (f.ids ? "LARP – Meine Merkliste" : "LARP-Kalender");
       return cached(
         request,
@@ -637,6 +776,8 @@ export function startServer(app: App, cfg: Config) {
       ),
     )
     .use(publicApi)
+    .use(accountPublicApi)
+    .use(accountApi)
     .use(adminApi)
     // Static assets
     .get("/assets/*", ({ request, params }) => staticFile(`assets/${params["*"]}`, request, "public, max-age=31536000, immutable") ?? notFound())

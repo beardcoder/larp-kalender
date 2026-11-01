@@ -12,6 +12,9 @@ Live: https://larp.letsbenow.de (not indexed by search engines)
   and 1 req/s throttle) or the device location, optional sorting by distance, bookmarks, "new since last visit" markers,
   offline support, installable, web push (new events per genre, reminders for bookmarked events: registration
   opens, deadline in ≤3 days, start in ≤7 days, cancellation), event suggestion form (lands as draft).
+- **Accounts**: one login for frontend and backend. Visitors can register as *member* (`/mehr#konto`) to sync
+  bookmarks across devices and get a private, auto-updating bookmark feed (`/kalender.ics?feed=<token>`).
+  Only *admin* and *editor* accounts can open `/admin`, create API tokens, use MCP or connect AI clients.
 - **Calendar export**: subscribable iCal feed `/kalender.ics` (filters `genre`, `type`, `country`,
   `registration`, `q`, `ids`, `deadlines=1` adds registration deadlines as separate entries), single event
   `.ics`, Google/Outlook links, CSV export `/veranstaltungen.csv` (Excel friendly, `;` + BOM, `?sep=,`), RSS

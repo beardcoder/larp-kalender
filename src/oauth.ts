@@ -9,6 +9,10 @@ import { nowIso } from "./db.ts";
 import { escapeHtml } from "./html.ts";
 import { createSession, randomToken, sessionUser, sha256, verifyLogin } from "./repo/users.ts";
 import type { User } from "./shared/types.ts";
+import { STAFF_ROLES } from "./shared/vocab.ts";
+
+/** Only staff accounts may connect AI clients (they get write access to events). */
+const staffOnly = (user: User | null) => (user && STAFF_ROLES.includes(user.role) ? user : null);
 
 const ACCESS_TTL_S = 7 * 86_400;
 const REFRESH_TTL_S = 365 * 86_400;
@@ -179,7 +183,7 @@ export function handleAuthorizeGet(db: Database, request: Request, sessionToken:
   const p = readParams(new URL(request.url).searchParams);
   const check = checkAuthorize(db, p);
   if ("error" in check) return check.error;
-  return consentPage(check.client, p, sessionUser(db, sessionToken));
+  return consentPage(check.client, p, staffOnly(sessionUser(db, sessionToken)));
 }
 
 export async function handleAuthorizePost(
@@ -201,11 +205,13 @@ export async function handleAuthorizePost(
     return redirectTo(redirect.toString());
   }
 
-  let user = sessionUser(db, sessionToken);
+  let user = staffOnly(sessionUser(db, sessionToken));
   if (!user) {
     if (!allowLoginAttempt()) return consentPage(check.client, p, null, "Zu viele Anmeldeversuche. Bitte in 15 Minuten erneut versuchen.");
     user = await verifyLogin(db, String(form.get("email") ?? ""), String(form.get("password") ?? ""));
     if (!user) return consentPage(check.client, p, null, "E-Mail oder Passwort ist falsch.");
+    if (!staffOnly(user))
+      return consentPage(check.client, p, null, "Nur Redaktion und Administration können KI-Anwendungen verbinden.");
     setSession(createSession(db, user.id));
   }
 

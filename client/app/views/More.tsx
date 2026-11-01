@@ -5,6 +5,7 @@ import { copyText, Icon } from "../components.tsx";
 import { disablePush, enablePush, needsInstallForPush, pushPrefsStore, pushSupported, testPush } from "../push.ts";
 import { activeFilterCount, eventsStore, filtersStore, loadEvents, themeStore, type Filters, type Theme } from "../state.ts";
 import { toast } from "../toast.tsx";
+import { AccountSection } from "./Account.tsx";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -242,11 +243,15 @@ function AppearanceSection() {
 
 export function MoreView() {
   const { events } = useStore(eventsStore);
+  useEffect(() => {
+    if (location.hash === "#konto") document.getElementById("konto")?.scrollIntoView({ block: "start" });
+  }, []);
   return (
     <section class="view view-more" aria-labelledby="more-heading">
       <header class="view-head">
         <h1 id="more-heading" class="view-title">Mehr</h1>
       </header>
+      <AccountSection />
       <CalendarSection />
       <NotificationSection />
       <section class="panel">

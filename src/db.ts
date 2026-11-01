@@ -139,6 +139,16 @@ const MIGRATIONS: string[] = [
     value TEXT NOT NULL
   );
   `,
+  /* 2: member accounts – bookmarks synced across devices and a private calendar feed */ `
+  CREATE TABLE user_favorites (
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (user_id, event_id)
+  );
+  ALTER TABLE users ADD COLUMN feed_token TEXT;
+  CREATE UNIQUE INDEX users_feed_token ON users(feed_token);
+  `,
 ];
 
 export function openDb(dataDir: string, file = "larp-kalender.sqlite"): Database {

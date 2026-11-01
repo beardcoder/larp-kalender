@@ -57,7 +57,10 @@ export const COUNTRIES = {
   SE: "Schweden",
 } as const;
 
-export const USER_ROLES = { admin: "Administrator", editor: "Redaktion" } as const;
+export const USER_ROLES = { admin: "Administrator", editor: "Redaktion", member: "Mitglied" } as const;
+
+/** Roles with access to the admin backend, API tokens and MCP. */
+export const STAFF_ROLES: readonly string[] = ["admin", "editor"];
 
 export type Genre = keyof typeof GENRES;
 export type EventType = keyof typeof EVENT_TYPES;
