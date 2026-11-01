@@ -375,14 +375,14 @@ export function page(title: string, body: string, status = 200): Response {
 <meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
 <title>${escapeHtml(title)} · LARP-Kalender</title>
 <style>
-:root{color-scheme:dark;--bg:#2d2a2e;--panel:#363337;--ink:#fcfcfa;--muted:#939293;--accent:#ff6188;--line:#403e41}
+:root{color-scheme:dark;--bg:#0e0b16;--panel:#17121f;--ink:#f4f0fa;--muted:#82789a;--accent:#ff3d9a;--line:#2a2237}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--ink);
 font:16px/1.5 system-ui,sans-serif;padding:16px}main{width:100%;max-width:420px;background:var(--panel);border:1px solid var(--line);
 border-radius:18px;padding:28px}h1{font:700 1.6rem/1.2 system-ui,sans-serif;letter-spacing:-.02em;margin:0 0 16px}label{display:grid;gap:6px;margin:14px 0;font-size:.9rem;color:var(--muted)}
 input{font:inherit;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
-input:focus-visible,button:focus-visible{outline:2px solid #78dce8;outline-offset:2px}
+input:focus-visible,button:focus-visible{outline:2px solid #38e1ff;outline-offset:2px}
 .actions{display:flex;gap:10px;margin-top:20px}button{font:inherit;font-weight:600;padding:12px 18px;border-radius:999px;border:1px solid var(--line);
-background:transparent;color:var(--ink);cursor:pointer}button.primary{background:var(--accent);border-color:var(--accent);color:#2d2a2e;flex:1}
+background:transparent;color:var(--ink);cursor:pointer}button.primary{background:linear-gradient(120deg,#ff3d9a,#a77bff);border-color:transparent;color:#14060d;flex:1;box-shadow:0 8px 28px -6px rgba(255,61,154,.45)}
 .muted,.who{color:var(--muted);font-size:.9rem}.error{color:#ff9aa6}
 </style></head><body><main><h1>${escapeHtml(title)}</h1>${body}</main></body></html>`;
   return new Response(html, {

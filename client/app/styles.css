@@ -1,6 +1,7 @@
-/* LARP-Kalender – Monokai Pro
-   Warm charcoal surfaces with the Monokai Pro accents. Pink is reserved for registration (status tile and
-   CTA), yellow marks dates and months, the remaining accents encode genres. Display type: Bricolage Grotesque. */
+/* LARP-Kalender – "Arkane Nacht"
+   Deep violet-black stage with neon accents: magenta for everything about registration (with a violet
+   gradient on calls to action), cyan for open registration, amber for dates and months, the remaining
+   accents encode genres. Light mode uses a lavender-tinted white with deeper, readable accents. */
 
 @font-face {
   font-family: "Bricolage Grotesque";
@@ -19,37 +20,42 @@
 
 :root {
   color-scheme: dark;
-  --bg: #2d2a2e;
-  --bg-raised: #363337;
-  --bg-sunken: #221f22;
-  --bg-hover: #403e41;
-  --line: #403e41;
-  --line-strong: #5b595c;
-  --ink: #fcfcfa;
-  --ink-muted: #c1c0c0;
-  --ink-faint: #939293;
-  --accent: #ff6188;
-  --accent-hi: #ff7a9b;
-  --accent-ink: #2d2a2e;
-  --yellow: #ffd866;
-  --orange: #fc9867;
-  --green: #a9dc76;
-  --cyan: #78dce8;
-  --purple: #ab9df2;
-  --stone: #727072;
-  --danger: #ff6188;
-  --focus: #78dce8;
-  --shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
-  --tile-tint: 18%;
+  --bg: #0e0b16;
+  --bg-raised: #17121f;
+  --bg-sunken: #0a0810;
+  --bg-hover: #211a2c;
+  --line: #2a2237;
+  --line-strong: #3e3352;
+  --ink: #f4f0fa;
+  --ink-muted: #bab1c9;
+  --ink-faint: #82789a;
+  --accent: #ff3d9a;
+  --accent-hi: #ff6db3;
+  --accent-2: #a77bff;
+  --accent-ink: #14060d;
+  --yellow: #ffc94d;
+  --orange: #ff8a4c;
+  --green: #5cf2a5;
+  --cyan: #38e1ff;
+  --purple: #a77bff;
+  --stone: #6c6380;
+  --danger: #ff5c8a;
+  --focus: #38e1ff;
+  --shadow: 0 24px 60px rgba(4, 2, 10, 0.6);
+  --glow-strength: 45%;
+  --aura-a: rgba(167, 123, 255, 0.16);
+  --aura-b: rgba(255, 61, 154, 0.1);
+  --aura-c: rgba(56, 225, 255, 0.06);
+  --tile-tint: 14%;
   --g-fantasy: var(--green);
   --g-endzeit: var(--orange);
   --g-scifi: var(--cyan);
-  --g-horror: var(--accent);
+  --g-horror: var(--danger);
   --g-historical: var(--yellow);
   --g-urban: var(--purple);
-  --g-steampunk: #e3a46a;
-  --g-pirates: #5fb5e8;
-  --g-western: #d9a066;
+  --g-steampunk: #e8a15c;
+  --g-pirates: #4fa8ff;
+  --g-western: #d99a5b;
   --g-modern: var(--ink-faint);
   --g-other: var(--stone);
 
@@ -57,62 +63,75 @@
   --font-ui: "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif;
   --radius-s: 10px;
   --radius-m: 14px;
-  --radius-l: 20px;
+  --radius-l: 22px;
   --tabbar-h: 64px;
   --safe-b: env(safe-area-inset-bottom, 0px);
+  --cta-gradient: linear-gradient(120deg, var(--accent) 0%, var(--accent-2) 100%);
+  --glow: 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent),
+    0 8px 28px -6px color-mix(in srgb, var(--accent) var(--glow-strength), transparent);
 }
 
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
     color-scheme: light;
-    --bg: #faf4f2;
+    --bg: #f6f4fb;
     --bg-raised: #ffffff;
-    --bg-sunken: #f2eae8;
-    --bg-hover: #ede4e2;
-    --line: #e6dcd9;
-    --line-strong: #d3cdcc;
-    --ink: #29242a;
-    --ink-muted: #5e575f;
-    --ink-faint: #918c8e;
-    --accent: #e14775;
-    --accent-hi: #ef5d89;
+    --bg-sunken: #eeeaf6;
+    --bg-hover: #e9e4f3;
+    --line: #e2dcee;
+    --line-strong: #cbc2dc;
+    --ink: #17121f;
+    --ink-muted: #4e4560;
+    --ink-faint: #857c99;
+    --accent: #e0177a;
+    --accent-hi: #f0338e;
+    --accent-2: #7442e0;
     --accent-ink: #ffffff;
-    --yellow: #cc7a0a;
-    --orange: #e16032;
-    --green: #269d69;
-    --cyan: #1c8ca8;
-    --purple: #7058be;
-    --stone: #a59fa0;
-    --danger: #e14775;
-    --focus: #1c8ca8;
-    --shadow: 0 24px 60px rgba(41, 36, 42, 0.14);
-    --tile-tint: 13%;
+    --yellow: #b7791f;
+    --orange: #d9541e;
+    --green: #0f9f6e;
+    --cyan: #0a8fb5;
+    --purple: #7442e0;
+    --stone: #a69eb8;
+    --danger: #d1145f;
+    --focus: #7442e0;
+    --shadow: 0 24px 60px rgba(23, 18, 31, 0.12);
+    --glow-strength: 25%;
+    --aura-a: rgba(116, 66, 224, 0.09);
+    --aura-b: rgba(224, 23, 122, 0.06);
+    --aura-c: rgba(10, 143, 181, 0.05);
+    --tile-tint: 10%;
   }
 }
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #faf4f2;
+  --bg: #f6f4fb;
   --bg-raised: #ffffff;
-  --bg-sunken: #f2eae8;
-  --bg-hover: #ede4e2;
-  --line: #e6dcd9;
-  --line-strong: #d3cdcc;
-  --ink: #29242a;
-  --ink-muted: #5e575f;
-  --ink-faint: #918c8e;
-  --accent: #e14775;
-  --accent-hi: #ef5d89;
+  --bg-sunken: #eeeaf6;
+  --bg-hover: #e9e4f3;
+  --line: #e2dcee;
+  --line-strong: #cbc2dc;
+  --ink: #17121f;
+  --ink-muted: #4e4560;
+  --ink-faint: #857c99;
+  --accent: #e0177a;
+  --accent-hi: #f0338e;
+  --accent-2: #7442e0;
   --accent-ink: #ffffff;
-  --yellow: #cc7a0a;
-  --orange: #e16032;
-  --green: #269d69;
-  --cyan: #1c8ca8;
-  --purple: #7058be;
-  --stone: #a59fa0;
-  --danger: #e14775;
-  --focus: #1c8ca8;
-  --shadow: 0 24px 60px rgba(41, 36, 42, 0.14);
-  --tile-tint: 13%;
+  --yellow: #b7791f;
+  --orange: #d9541e;
+  --green: #0f9f6e;
+  --cyan: #0a8fb5;
+  --purple: #7442e0;
+  --stone: #a69eb8;
+  --danger: #d1145f;
+  --focus: #7442e0;
+  --shadow: 0 24px 60px rgba(23, 18, 31, 0.12);
+  --glow-strength: 25%;
+  --aura-a: rgba(116, 66, 224, 0.09);
+  --aura-b: rgba(224, 23, 122, 0.06);
+  --aura-c: rgba(10, 143, 181, 0.05);
+  --tile-tint: 10%;
 }
 
 /* ---------- base ---------- */
@@ -130,7 +149,13 @@ html {
 }
 body {
   margin: 0;
-  background: var(--bg);
+  /* Soft neon auras behind the content. */
+  background:
+    radial-gradient(900px 520px at 8% -8%, var(--aura-a), transparent 70%),
+    radial-gradient(760px 460px at 105% 4%, var(--aura-b), transparent 70%),
+    radial-gradient(700px 500px at 50% 110%, var(--aura-c), transparent 70%),
+    var(--bg);
+  background-attachment: fixed;
   color: var(--ink);
   font: 400 16px/1.5 var(--font-ui);
   -webkit-font-smoothing: antialiased;
@@ -310,7 +335,9 @@ button {
   .side-nav a.is-active {
     background: var(--bg-raised);
     color: var(--ink);
-    box-shadow: inset 3px 0 0 var(--accent);
+    box-shadow:
+      inset 3px 0 0 var(--accent),
+      -6px 0 18px -10px var(--accent);
   }
   .side-nav .badge {
     margin-left: auto;
@@ -556,7 +583,9 @@ button {
   height: 64px;
   border-radius: 16px;
   background: color-mix(in srgb, var(--tone) var(--tile-tint), var(--bg-raised));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone) 35%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--tone) 45%, transparent),
+    0 6px 22px -8px color-mix(in srgb, var(--tone) var(--glow-strength), transparent);
   color: var(--tone);
 }
 .seal::before {
@@ -568,6 +597,7 @@ button {
   height: 3px;
   border-radius: 0 0 3px 3px;
   background: var(--tone);
+  box-shadow: 0 0 10px var(--tone);
 }
 .seal-day {
   font-family: var(--font-display);
@@ -629,11 +659,13 @@ button {
   gap: 14px;
   padding: 14px;
   border-radius: var(--radius-l);
-  background: var(--bg-raised);
+  background: color-mix(in srgb, var(--bg-raised) 88%, transparent);
   border: 1px solid var(--line);
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 .card:hover {
-  border-color: var(--line-strong);
+  border-color: color-mix(in srgb, var(--accent-2) 45%, var(--line));
+  box-shadow: 0 10px 30px -14px color-mix(in srgb, var(--accent-2) 40%, transparent);
 }
 .card:has(.card-link:focus-visible) {
   outline: 2px solid var(--focus);
@@ -725,7 +757,7 @@ button {
   color: var(--ink-muted);
 }
 .status-open {
-  color: var(--green);
+  color: var(--cyan);
 }
 .status-waitlist,
 .status-soon {
@@ -745,14 +777,15 @@ button {
   align-self: center;
   padding: 9px 14px;
   border-radius: 999px;
-  background: var(--accent);
+  background: var(--cta-gradient);
   color: var(--accent-ink);
   font-size: 0.85rem;
-  font-weight: 650;
+  font-weight: 700;
   text-decoration: none;
+  box-shadow: var(--glow);
 }
 .card-cta:hover {
-  background: var(--accent-hi);
+  filter: brightness(1.08) saturate(1.1);
 }
 .card-cta:active,
 .btn:active {
@@ -800,12 +833,13 @@ button {
   opacity: 0.9;
 }
 .btn.accent {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--cta-gradient);
+  border-color: transparent;
   color: var(--accent-ink);
+  box-shadow: var(--glow);
 }
 .btn.accent:hover {
-  background: var(--accent-hi);
+  filter: brightness(1.08) saturate(1.1);
 }
 .btn.ghost {
   background: transparent;
@@ -977,7 +1011,8 @@ legend {
   transition: transform 0.18s;
 }
 .switch input:checked {
-  background: var(--accent);
+  background: var(--cta-gradient);
+  box-shadow: 0 0 14px -2px color-mix(in srgb, var(--accent) var(--glow-strength), transparent);
 }
 .switch input:checked::after {
   transform: translateX(18px);
