@@ -23,8 +23,8 @@ const manifest = {
   display: "standalone",
   display_override: ["standalone", "minimal-ui"],
   orientation: "portrait-primary",
-  background_color: "#0e0b16",
-  theme_color: "#0e0b16",
+  background_color: "#15110e",
+  theme_color: "#15110e",
   categories: ["entertainment", "lifestyle", "events"],
   icons: [
     { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },

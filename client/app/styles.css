@@ -1,7 +1,7 @@
-/* LARP-Kalender – "Arkane Nacht"
-   Deep violet-black stage with neon accents: magenta for everything about registration (with a violet
-   gradient on calls to action), cyan for open registration, amber for dates and months, the remaining
-   accents encode genres. Light mode uses a lavender-tinted white with deeper, readable accents. */
+/* LARP-Kalender – "Glut & Erde"
+   Warm umber stage lit by embers: neon ember orange for everything about registration (with a rust
+   gradient on calls to action), patina for open registration, ochre for dates and months, the remaining
+   accents encode genres. Light mode uses warm sand with deeper, readable accents. */
 
 @font-face {
   font-family: "Bricolage Grotesque";
@@ -20,32 +20,32 @@
 
 :root {
   color-scheme: dark;
-  --bg: #0e0b16;
-  --bg-raised: #17121f;
-  --bg-sunken: #0a0810;
-  --bg-hover: #211a2c;
-  --line: #2a2237;
-  --line-strong: #3e3352;
-  --ink: #f4f0fa;
-  --ink-muted: #bab1c9;
-  --ink-faint: #82789a;
-  --accent: #ff3d9a;
-  --accent-hi: #ff6db3;
-  --accent-2: #a77bff;
-  --accent-ink: #14060d;
-  --yellow: #ffc94d;
+  --bg: #15110e;
+  --bg-raised: #1f1915;
+  --bg-sunken: #100c0a;
+  --bg-hover: #2a221c;
+  --line: #33291f;
+  --line-strong: #4a3c2f;
+  --ink: #f3ebe0;
+  --ink-muted: #c4b5a2;
+  --ink-faint: #8c7c69;
+  --accent: #ff7a3d;
+  --accent-hi: #ff9562;
+  --accent-2: #e5482d;
+  --accent-ink: #1a0d05;
+  --yellow: #f0b84a;
   --orange: #ff8a4c;
-  --green: #5cf2a5;
-  --cyan: #38e1ff;
-  --purple: #a77bff;
-  --stone: #6c6380;
-  --danger: #ff5c8a;
-  --focus: #38e1ff;
-  --shadow: 0 24px 60px rgba(4, 2, 10, 0.6);
+  --green: #9cc46a;
+  --cyan: #62c7b8;
+  --purple: #b98fd8;
+  --stone: #7a6b5d;
+  --danger: #ff6a55;
+  --focus: #f0b84a;
+  --shadow: 0 24px 60px rgba(8, 5, 2, 0.6);
   --glow-strength: 45%;
-  --aura-a: rgba(167, 123, 255, 0.16);
-  --aura-b: rgba(255, 61, 154, 0.1);
-  --aura-c: rgba(56, 225, 255, 0.06);
+  --aura-a: rgba(255, 122, 61, 0.13);
+  --aura-b: rgba(229, 72, 45, 0.08);
+  --aura-c: rgba(240, 184, 74, 0.06);
   --tile-tint: 14%;
   --g-fantasy: var(--green);
   --g-endzeit: var(--orange);
@@ -53,8 +53,8 @@
   --g-horror: var(--danger);
   --g-historical: var(--yellow);
   --g-urban: var(--purple);
-  --g-steampunk: #e8a15c;
-  --g-pirates: #4fa8ff;
+  --g-steampunk: #d9a066;
+  --g-pirates: #6fa8c9;
   --g-western: #d99a5b;
   --g-modern: var(--ink-faint);
   --g-other: var(--stone);
@@ -74,63 +74,63 @@
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
     color-scheme: light;
-    --bg: #f6f4fb;
-    --bg-raised: #ffffff;
-    --bg-sunken: #eeeaf6;
-    --bg-hover: #e9e4f3;
-    --line: #e2dcee;
-    --line-strong: #cbc2dc;
-    --ink: #17121f;
-    --ink-muted: #4e4560;
-    --ink-faint: #857c99;
-    --accent: #e0177a;
-    --accent-hi: #f0338e;
-    --accent-2: #7442e0;
+    --bg: #f5efe6;
+    --bg-raised: #fffaf3;
+    --bg-sunken: #ece3d6;
+    --bg-hover: #e8ddcd;
+    --line: #e0d4c3;
+    --line-strong: #cdbda7;
+    --ink: #231a13;
+    --ink-muted: #5c4c3d;
+    --ink-faint: #8f7d6a;
+    --accent: #c4501c;
+    --accent-hi: #d9622a;
+    --accent-2: #a8321f;
     --accent-ink: #ffffff;
-    --yellow: #b7791f;
-    --orange: #d9541e;
-    --green: #0f9f6e;
-    --cyan: #0a8fb5;
-    --purple: #7442e0;
-    --stone: #a69eb8;
-    --danger: #d1145f;
-    --focus: #7442e0;
-    --shadow: 0 24px 60px rgba(23, 18, 31, 0.12);
+    --yellow: #9a6a12;
+    --orange: #c4501c;
+    --green: #5e7f2e;
+    --cyan: #1f8a7e;
+    --purple: #7a4fa0;
+    --stone: #a89884;
+    --danger: #b8321f;
+    --focus: #9a6a12;
+    --shadow: 0 24px 60px rgba(35, 26, 19, 0.12);
     --glow-strength: 25%;
-    --aura-a: rgba(116, 66, 224, 0.09);
-    --aura-b: rgba(224, 23, 122, 0.06);
-    --aura-c: rgba(10, 143, 181, 0.05);
+    --aura-a: rgba(196, 80, 28, 0.08);
+    --aura-b: rgba(168, 50, 31, 0.05);
+    --aura-c: rgba(154, 106, 18, 0.06);
     --tile-tint: 10%;
   }
 }
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #f6f4fb;
-  --bg-raised: #ffffff;
-  --bg-sunken: #eeeaf6;
-  --bg-hover: #e9e4f3;
-  --line: #e2dcee;
-  --line-strong: #cbc2dc;
-  --ink: #17121f;
-  --ink-muted: #4e4560;
-  --ink-faint: #857c99;
-  --accent: #e0177a;
-  --accent-hi: #f0338e;
-  --accent-2: #7442e0;
+  --bg: #f5efe6;
+  --bg-raised: #fffaf3;
+  --bg-sunken: #ece3d6;
+  --bg-hover: #e8ddcd;
+  --line: #e0d4c3;
+  --line-strong: #cdbda7;
+  --ink: #231a13;
+  --ink-muted: #5c4c3d;
+  --ink-faint: #8f7d6a;
+  --accent: #c4501c;
+  --accent-hi: #d9622a;
+  --accent-2: #a8321f;
   --accent-ink: #ffffff;
-  --yellow: #b7791f;
-  --orange: #d9541e;
-  --green: #0f9f6e;
-  --cyan: #0a8fb5;
-  --purple: #7442e0;
-  --stone: #a69eb8;
-  --danger: #d1145f;
-  --focus: #7442e0;
-  --shadow: 0 24px 60px rgba(23, 18, 31, 0.12);
+  --yellow: #9a6a12;
+  --orange: #c4501c;
+  --green: #5e7f2e;
+  --cyan: #1f8a7e;
+  --purple: #7a4fa0;
+  --stone: #a89884;
+  --danger: #b8321f;
+  --focus: #9a6a12;
+  --shadow: 0 24px 60px rgba(35, 26, 19, 0.12);
   --glow-strength: 25%;
-  --aura-a: rgba(116, 66, 224, 0.09);
-  --aura-b: rgba(224, 23, 122, 0.06);
-  --aura-c: rgba(10, 143, 181, 0.05);
+  --aura-a: rgba(196, 80, 28, 0.08);
+  --aura-b: rgba(168, 50, 31, 0.05);
+  --aura-c: rgba(154, 106, 18, 0.06);
   --tile-tint: 10%;
 }
 

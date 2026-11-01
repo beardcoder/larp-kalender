@@ -10,6 +10,6 @@ export function applyTheme(theme: Theme): void {
   if (theme === "auto") delete root.dataset.theme;
   else root.dataset.theme = theme;
   const dark = theme === "dark" || (theme === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
-  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#0e0b16" : "#f6f4fb");
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#15110e" : "#f5efe6");
 }
 themeStore.subscribe(applyTheme);
