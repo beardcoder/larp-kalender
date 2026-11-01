@@ -28,7 +28,7 @@ Live: https://larp.letsbenow.de (not indexed by search engines)
 ## Stack
 
 Bun · Elysia · bun:sqlite · MCP TypeScript SDK · Zod · Preact · motion.dev (`motion/mini`) · self-hosted fonts
-(Fraunces, Inter Tight).
+(Bricolage Grotesque, Inter Tight).
 
 ## MCP tools
 

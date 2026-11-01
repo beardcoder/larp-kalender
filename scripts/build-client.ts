@@ -23,8 +23,8 @@ const manifest = {
   display: "standalone",
   display_override: ["standalone", "minimal-ui"],
   orientation: "portrait-primary",
-  background_color: "#101c17",
-  theme_color: "#101c17",
+  background_color: "#2d2a2e",
+  theme_color: "#2d2a2e",
   categories: ["entertainment", "lifestyle", "events"],
   icons: [
     { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
@@ -77,7 +77,7 @@ async function build(): Promise<void> {
 
   // Self-hosted fonts (no third-party requests). The version in the file name busts the immutable cache.
   const fonts: [string, string][] = [
-    ["@fontsource-variable/fraunces/files/fraunces-latin-soft-normal.woff2", "fraunces-soft-5.3.0.woff2"],
+    ["@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-wght-normal.woff2", "bricolage-grotesque-5.3.0.woff2"],
     ["@fontsource-variable/inter-tight/files/inter-tight-latin-wght-normal.woff2", "inter-tight-5.3.0.woff2"],
   ];
   mkdirSync(join(out, "assets", "fonts"), { recursive: true });

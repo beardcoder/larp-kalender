@@ -97,7 +97,7 @@ export function EventsPage({ meta, reloadMeta }: { meta: Meta; reloadMeta: () =>
     <section class="view">
       <header class="view-head admin-head">
         <h1 class="view-title">Veranstaltungen</h1>
-        <a class="btn wax" href="/admin/veranstaltung/neu">
+        <a class="btn accent" href="/admin/veranstaltung/neu">
           <Icon name="plus" size={18} /> Neue Veranstaltung
         </a>
       </header>
@@ -176,7 +176,7 @@ export function EventsPage({ meta, reloadMeta }: { meta: Meta; reloadMeta: () =>
                   </td>
                   <td class="nowrap">
                     {e.status === "draft" ? (
-                      <button class="btn small wax" onClick={() => void quickStatus(e, "published")}>
+                      <button class="btn small accent" onClick={() => void quickStatus(e, "published")}>
                         Veröffentlichen
                       </button>
                     ) : (

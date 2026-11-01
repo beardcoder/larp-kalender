@@ -160,7 +160,7 @@ export function DetailView({ slug }: { slug: string }) {
             {e.registrationOpens && e.registrationOpens > today ? <p class="register-line">Anmeldung öffnet am {formatDate(e.registrationOpens, true)}</p> : null}
             {e.priceText ? <p class="register-line">{e.priceText}</p> : null}
             {canRegister ? (
-              <a class="btn wax big" href={e.registrationUrl!} target="_blank" rel="noopener noreferrer">
+              <a class="btn accent big" href={e.registrationUrl!} target="_blank" rel="noopener noreferrer">
                 Zur Anmeldung <Icon name="external" size={18} />
               </a>
             ) : e.websiteUrl && e.status !== "cancelled" ? (

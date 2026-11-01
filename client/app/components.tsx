@@ -46,14 +46,14 @@ export function Icon({ name, size = 20, class: cls }: { name: IconName; size?: n
   );
 }
 
-/* ---------- seal: date badge whose wax colour encodes the registration state ---------- */
+/* ---------- date tile whose colour encodes the registration state ---------- */
 
 export function sealTone(e: LarpEvent, today: string): string {
-  if (e.status === "cancelled") return "ash";
-  if (e.endDate < today) return "ash";
-  if (e.registrationStatus === "open") return "wax";
-  if (e.registrationStatus === "waitlist" || e.registrationStatus === "soon") return "brass";
-  return "stone";
+  if (e.status === "cancelled") return "past";
+  if (e.endDate < today) return "past";
+  if (e.registrationStatus === "open") return "open";
+  if (e.registrationStatus === "waitlist" || e.registrationStatus === "soon") return "soon";
+  return "closed";
 }
 
 export function Seal({ event: e, today, size = "md" }: { event: LarpEvent; today: string; size?: "md" | "lg" }) {

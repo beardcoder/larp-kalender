@@ -75,7 +75,7 @@
   font-size: 1.8rem;
   font-weight: 600;
   line-height: 1.1;
-  color: var(--brass);
+  color: var(--yellow);
 }
 .stats span {
   font-size: 0.85rem;
@@ -103,14 +103,14 @@
 }
 .admin-tabs a.is-on {
   color: var(--ink);
-  border-color: var(--wax);
+  border-color: var(--accent);
 }
 .badge {
   font-size: 0.72rem;
   padding: 1px 7px;
   border-radius: 999px;
-  background: var(--wax);
-  color: var(--wax-ink);
+  background: var(--accent);
+  color: var(--accent-ink);
 }
 
 .table-wrap {
@@ -164,7 +164,7 @@ a.row-title:hover {
   color: var(--ink-faint);
 }
 .row-sub.warn {
-  color: var(--amber);
+  color: var(--yellow);
 }
 .nowrap {
   white-space: nowrap;
@@ -218,8 +218,8 @@ a.row-title:hover {
   margin: 0 0 14px;
   padding: 14px 16px;
   border-radius: var(--radius-m);
-  border: 1px solid color-mix(in srgb, var(--brass) 45%, transparent);
-  background: color-mix(in srgb, var(--brass) 10%, var(--bg-raised));
+  border: 1px solid color-mix(in srgb, var(--yellow) 45%, transparent);
+  background: color-mix(in srgb, var(--yellow) 10%, var(--bg-raised));
 }
 .notice p {
   margin: 0 0 8px;
@@ -229,8 +229,8 @@ a.row-title:hover {
   padding-left: 18px;
 }
 .notice-warn {
-  border-color: color-mix(in srgb, var(--wax) 55%, transparent);
-  background: color-mix(in srgb, var(--wax) 10%, var(--bg-raised));
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg-raised));
 }
 
 .copy-field {

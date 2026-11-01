@@ -369,14 +369,14 @@ export function page(title: string, body: string, status = 200): Response {
 <meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
 <title>${escapeHtml(title)} · LARP-Kalender</title>
 <style>
-:root{color-scheme:dark;--bg:#0f1a16;--panel:#17251f;--ink:#e8e4d6;--muted:#9fa99f;--wax:#b8293d;--line:#2b3b33}
+:root{color-scheme:dark;--bg:#2d2a2e;--panel:#363337;--ink:#fcfcfa;--muted:#939293;--accent:#ff6188;--line:#403e41}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--ink);
 font:16px/1.5 system-ui,sans-serif;padding:16px}main{width:100%;max-width:420px;background:var(--panel);border:1px solid var(--line);
-border-radius:18px;padding:28px}h1{font:600 1.6rem/1.2 Georgia,serif;margin:0 0 16px}label{display:grid;gap:6px;margin:14px 0;font-size:.9rem;color:var(--muted)}
+border-radius:18px;padding:28px}h1{font:700 1.6rem/1.2 system-ui,sans-serif;letter-spacing:-.02em;margin:0 0 16px}label{display:grid;gap:6px;margin:14px 0;font-size:.9rem;color:var(--muted)}
 input{font:inherit;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
-input:focus-visible,button:focus-visible{outline:2px solid #d9b45a;outline-offset:2px}
+input:focus-visible,button:focus-visible{outline:2px solid #78dce8;outline-offset:2px}
 .actions{display:flex;gap:10px;margin-top:20px}button{font:inherit;font-weight:600;padding:12px 18px;border-radius:999px;border:1px solid var(--line);
-background:transparent;color:var(--ink);cursor:pointer}button.primary{background:var(--wax);border-color:var(--wax);color:#fff;flex:1}
+background:transparent;color:var(--ink);cursor:pointer}button.primary{background:var(--accent);border-color:var(--accent);color:#2d2a2e;flex:1}
 .muted,.who{color:var(--muted);font-size:.9rem}.error{color:#ff9aa6}
 </style></head><body><main><h1>${escapeHtml(title)}</h1>${body}</main></body></html>`;
   return new Response(html, {

@@ -105,7 +105,7 @@ export function CalendarView() {
       </div>
 
       <p class="legend">
-        <span class="tone tone-wax" /> Anmeldung offen <span class="tone tone-brass" /> bald / Warteliste <span class="tone tone-stone" /> geschlossen / unbekannt
+        <span class="tone tone-open" /> Anmeldung offen <span class="tone tone-soon" /> bald / Warteliste <span class="tone tone-closed" /> geschlossen / unbekannt
       </p>
 
       <div class="day-list">

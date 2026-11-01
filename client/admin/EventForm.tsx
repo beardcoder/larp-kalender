@@ -151,7 +151,7 @@ export function EventForm({ id, meta }: { id: number | null; meta: Meta }) {
           <p>
             <strong>Entwurf.</strong> {event.notesInternal ?? "Noch nicht öffentlich sichtbar."}
           </p>
-          <button class="btn wax small" onClick={() => void save({ status: "published" })} disabled={saving}>
+          <button class="btn accent small" onClick={() => void save({ status: "published" })} disabled={saving}>
             Prüfen und veröffentlichen
           </button>
         </div>

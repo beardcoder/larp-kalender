@@ -1,12 +1,11 @@
-/* LARP-Kalender – "Waldnacht & Siegelwachs"
-   Pine-black night as the stage, parchment text, sealing-wax red for everything around registration,
-   brass for dates. The wax seal (date badge) is the one memorable element; its colour encodes the
-   registration state. */
+/* LARP-Kalender – Monokai Pro
+   Warm charcoal surfaces with the Monokai Pro accents. Pink is reserved for registration (status tile and
+   CTA), yellow marks dates and months, the remaining accents encode genres. Display type: Bricolage Grotesque. */
 
 @font-face {
-  font-family: "Fraunces";
-  src: url("/assets/fonts/fraunces-soft-5.3.0.woff2") format("woff2-variations");
-  font-weight: 100 900;
+  font-family: "Bricolage Grotesque";
+  src: url("/assets/fonts/bricolage-grotesque-5.3.0.woff2") format("woff2-variations");
+  font-weight: 200 800;
   font-style: normal;
   font-display: swap;
 }
@@ -20,45 +19,45 @@
 
 :root {
   color-scheme: dark;
-  --bg: #101c17;
-  --bg-raised: #16261f;
-  --bg-sunken: #0b1511;
-  --bg-hover: #1c2e26;
-  --line: #24372e;
-  --line-strong: #34493f;
-  --ink: #ece6d4;
-  --ink-muted: #a8b2a4;
-  --ink-faint: #74837a;
-  --wax: #b3263b;
-  --wax-hi: #d6475d;
-  --wax-deep: #7a1424;
-  --wax-ink: #fff3ef;
-  --brass: #d6ad5c;
-  --brass-deep: #8d6a22;
-  --stone: #56665d;
-  --moss: #8dbb75;
-  --amber: #e6aa45;
-  --danger: #ff8f9c;
-  --focus: #e8c46f;
-  --shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+  --bg: #2d2a2e;
+  --bg-raised: #363337;
+  --bg-sunken: #221f22;
+  --bg-hover: #403e41;
+  --line: #403e41;
+  --line-strong: #5b595c;
+  --ink: #fcfcfa;
+  --ink-muted: #c1c0c0;
+  --ink-faint: #939293;
+  --accent: #ff6188;
+  --accent-hi: #ff7a9b;
+  --accent-ink: #2d2a2e;
+  --yellow: #ffd866;
+  --orange: #fc9867;
+  --green: #a9dc76;
+  --cyan: #78dce8;
+  --purple: #ab9df2;
+  --stone: #727072;
+  --danger: #ff6188;
+  --focus: #78dce8;
+  --shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  --tile-tint: 18%;
+  --g-fantasy: var(--green);
+  --g-endzeit: var(--orange);
+  --g-scifi: var(--cyan);
+  --g-horror: var(--accent);
+  --g-historical: var(--yellow);
+  --g-urban: var(--purple);
+  --g-steampunk: #e3a46a;
+  --g-pirates: #5fb5e8;
+  --g-western: #d9a066;
+  --g-modern: var(--ink-faint);
+  --g-other: var(--stone);
 
-  --g-fantasy: #8dbb75;
-  --g-endzeit: #cf7e43;
-  --g-scifi: #5cc1d6;
-  --g-horror: #c45a7c;
-  --g-historical: #cfa961;
-  --g-urban: #9b7fd6;
-  --g-steampunk: #c18f55;
-  --g-pirates: #4f9ed0;
-  --g-western: #d39c6c;
-  --g-modern: #94a7b5;
-  --g-other: #9aa59a;
-
-  --font-display: "Fraunces", "Iowan Old Style", Georgia, serif;
+  --font-display: "Bricolage Grotesque", "Inter Tight", system-ui, sans-serif;
   --font-ui: "Inter Tight", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --radius-s: 8px;
+  --radius-s: 10px;
   --radius-m: 14px;
-  --radius-l: 22px;
+  --radius-l: 20px;
   --tabbar-h: 64px;
   --safe-b: env(safe-area-inset-bottom, 0px);
 }
@@ -66,72 +65,54 @@
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
     color-scheme: light;
-    --bg: #eef0e8;
-    --bg-raised: #f8f9f4;
-    --bg-sunken: #e3e7dc;
-    --bg-hover: #e6eae0;
-    --line: #d3d9cb;
-    --line-strong: #bcc5b3;
-    --ink: #18231d;
-    --ink-muted: #4f5d54;
-    --ink-faint: #7a867d;
-    --wax: #a51f34;
-    --wax-hi: #c23349;
-    --wax-deep: #741222;
-    --brass: #8f6a1f;
-    --brass-deep: #6d4f12;
-    --stone: #8a978e;
-    --moss: #3f7a33;
-    --amber: #9a6510;
-    --danger: #b3263b;
-    --focus: #8f6a1f;
-    --shadow: 0 18px 50px rgba(24, 35, 29, 0.18);
-    --g-fantasy: #4f8a3d;
-    --g-endzeit: #b0602a;
-    --g-scifi: #2a8aa0;
-    --g-horror: #a53d60;
-    --g-historical: #9a7a2e;
-    --g-urban: #6e52b0;
-    --g-steampunk: #93652e;
-    --g-pirates: #2f78a8;
-    --g-western: #a8703c;
-    --g-modern: #5c7080;
-    --g-other: #6c786c;
+    --bg: #faf4f2;
+    --bg-raised: #ffffff;
+    --bg-sunken: #f2eae8;
+    --bg-hover: #ede4e2;
+    --line: #e6dcd9;
+    --line-strong: #d3cdcc;
+    --ink: #29242a;
+    --ink-muted: #5e575f;
+    --ink-faint: #918c8e;
+    --accent: #e14775;
+    --accent-hi: #ef5d89;
+    --accent-ink: #ffffff;
+    --yellow: #cc7a0a;
+    --orange: #e16032;
+    --green: #269d69;
+    --cyan: #1c8ca8;
+    --purple: #7058be;
+    --stone: #a59fa0;
+    --danger: #e14775;
+    --focus: #1c8ca8;
+    --shadow: 0 24px 60px rgba(41, 36, 42, 0.14);
+    --tile-tint: 13%;
   }
 }
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #eef0e8;
-  --bg-raised: #f8f9f4;
-  --bg-sunken: #e3e7dc;
-  --bg-hover: #e6eae0;
-  --line: #d3d9cb;
-  --line-strong: #bcc5b3;
-  --ink: #18231d;
-  --ink-muted: #4f5d54;
-  --ink-faint: #7a867d;
-  --wax: #a51f34;
-  --wax-hi: #c23349;
-  --wax-deep: #741222;
-  --brass: #8f6a1f;
-  --brass-deep: #6d4f12;
-  --stone: #8a978e;
-  --moss: #3f7a33;
-  --amber: #9a6510;
-  --danger: #b3263b;
-  --focus: #8f6a1f;
-  --shadow: 0 18px 50px rgba(24, 35, 29, 0.18);
-  --g-fantasy: #4f8a3d;
-  --g-endzeit: #b0602a;
-  --g-scifi: #2a8aa0;
-  --g-horror: #a53d60;
-  --g-historical: #9a7a2e;
-  --g-urban: #6e52b0;
-  --g-steampunk: #93652e;
-  --g-pirates: #2f78a8;
-  --g-western: #a8703c;
-  --g-modern: #5c7080;
-  --g-other: #6c786c;
+  --bg: #faf4f2;
+  --bg-raised: #ffffff;
+  --bg-sunken: #f2eae8;
+  --bg-hover: #ede4e2;
+  --line: #e6dcd9;
+  --line-strong: #d3cdcc;
+  --ink: #29242a;
+  --ink-muted: #5e575f;
+  --ink-faint: #918c8e;
+  --accent: #e14775;
+  --accent-hi: #ef5d89;
+  --accent-ink: #ffffff;
+  --yellow: #cc7a0a;
+  --orange: #e16032;
+  --green: #269d69;
+  --cyan: #1c8ca8;
+  --purple: #7058be;
+  --stone: #a59fa0;
+  --danger: #e14775;
+  --focus: #1c8ca8;
+  --shadow: 0 24px 60px rgba(41, 36, 42, 0.14);
+  --tile-tint: 13%;
 }
 
 /* ---------- base ---------- */
@@ -224,7 +205,6 @@ button {
   font-weight: 600;
   font-size: 1.15rem;
   letter-spacing: -0.01em;
-  font-variation-settings: "SOFT" 100;
 }
 .brand img {
   width: 30px;
@@ -232,7 +212,7 @@ button {
 }
 .offline {
   font-size: 0.8rem;
-  color: var(--amber);
+  color: var(--yellow);
   border: 1px solid currentColor;
   border-radius: 999px;
   padding: 2px 10px;
@@ -271,7 +251,7 @@ button {
   color: var(--ink);
 }
 .tabbar a.is-active .tab-icon {
-  color: var(--wax-hi);
+  color: var(--accent-hi);
 }
 .tab-icon {
   position: relative;
@@ -283,7 +263,7 @@ button {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--wax-hi);
+  background: var(--accent-hi);
   border: 2px solid var(--bg-sunken);
 }
 
@@ -328,7 +308,7 @@ button {
   .side-nav a.is-active {
     background: var(--bg-raised);
     color: var(--ink);
-    box-shadow: inset 3px 0 0 var(--wax);
+    box-shadow: inset 3px 0 0 var(--accent);
   }
   .side-nav .badge {
     margin-left: auto;
@@ -337,8 +317,8 @@ button {
     text-align: center;
     padding: 1px 7px;
     border-radius: 999px;
-    background: var(--wax);
-    color: var(--wax-ink);
+    background: var(--accent);
+    color: var(--accent-ink);
   }
   .side-suggest {
     margin-top: auto;
@@ -361,11 +341,10 @@ button {
   font-size: clamp(2rem, 7vw, 2.9rem);
   line-height: 1.05;
   letter-spacing: -0.02em;
-  font-variation-settings: "SOFT" 100;
   margin: 8px 0 16px;
 }
 .view-title .year {
-  color: var(--brass);
+  color: var(--yellow);
   font-weight: 400;
 }
 .view-lead {
@@ -430,8 +409,8 @@ button {
   height: 20px;
   padding: 0 5px;
   border-radius: 999px;
-  background: var(--wax);
-  color: var(--wax-ink);
+  background: var(--accent);
+  color: var(--accent-ink);
   font-size: 0.72rem;
   font-weight: 700;
   line-height: 20px;
@@ -519,7 +498,7 @@ button {
   border: 0;
   background: none;
   padding: 0;
-  color: var(--brass);
+  color: var(--yellow);
   font-weight: 600;
   font-size: inherit;
   text-decoration: underline;
@@ -544,7 +523,7 @@ button {
   font-weight: 500;
   font-size: 1.35rem;
   letter-spacing: -0.01em;
-  color: var(--brass);
+  color: var(--yellow);
   background: linear-gradient(var(--bg) 70%, transparent);
 }
 @media (min-width: 960px) {
@@ -562,39 +541,38 @@ button {
   gap: 10px;
 }
 
-/* ---------- seal ---------- */
+/* ---------- date tile (class "seal" kept for the motion hook) ---------- */
 
 .seal {
-  --wax-a: var(--wax-hi);
-  --wax-b: var(--wax);
-  --wax-c: var(--wax-deep);
-  --seal-ink: var(--wax-ink);
+  --tone: var(--accent);
   position: relative;
   flex: none;
   display: grid;
   place-content: center;
   justify-items: center;
-  width: 62px;
-  height: 62px;
-  /* irregular, hand-pressed outline */
-  border-radius: 47% 53% 49% 51% / 52% 47% 53% 48%;
-  background:
-    radial-gradient(circle at 34% 28%, color-mix(in srgb, var(--wax-a) 90%, white 10%) 0 12%, transparent 46%),
-    radial-gradient(circle at 50% 50%, var(--wax-b) 0 52%, var(--wax-c) 100%);
-  box-shadow:
-    inset 0 0 0 3px color-mix(in srgb, var(--wax-c) 70%, transparent),
-    inset 0 0 0 5px color-mix(in srgb, var(--wax-a) 35%, transparent),
-    0 3px 0 color-mix(in srgb, var(--wax-c) 80%, black 20%),
-    0 6px 14px rgba(0, 0, 0, 0.28);
-  color: var(--seal-ink);
-  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.35), 0 1px 0 rgba(255, 255, 255, 0.12);
+  width: 60px;
+  height: 64px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--tone) var(--tile-tint), var(--bg-raised));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone) 35%, transparent);
+  color: var(--tone);
+}
+.seal::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 14px;
+  right: 14px;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: var(--tone);
 }
 .seal-day {
   font-family: var(--font-display);
-  font-weight: 650;
-  font-size: 1.45rem;
+  font-weight: 700;
+  font-size: 1.5rem;
   line-height: 1;
-  font-variation-settings: "SOFT" 100;
+  letter-spacing: -0.03em;
   font-feature-settings: "lnum", "tnum";
   white-space: nowrap;
 }
@@ -606,45 +584,37 @@ button {
 }
 .seal-to {
   font-size: 0.8em;
-  font-weight: 500;
-  opacity: 0.9;
+  font-weight: 600;
+  opacity: 0.85;
 }
 .seal-month {
-  font-size: 0.72rem;
-  font-weight: 600;
-  margin-top: 2px;
-  opacity: 0.88;
+  margin-top: 4px;
+  font-size: 0.7rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  color: var(--ink-muted);
   white-space: nowrap;
 }
-.seal-brass {
-  --wax-a: #e9c37a;
-  --wax-b: #b58a35;
-  --wax-c: #6e4f14;
-  --seal-ink: #24180a;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
+.seal-soon {
+  --tone: var(--yellow);
 }
-.seal-stone {
-  --wax-a: #8a9a8f;
-  --wax-b: #56665d;
-  --wax-c: #2f3c35;
-  --seal-ink: #eef2ea;
+.seal-closed {
+  --tone: var(--stone);
 }
-.seal-ash {
-  --wax-a: #6d7570;
-  --wax-b: #464e4a;
-  --wax-c: #2a302d;
-  --seal-ink: #c6ccc8;
-  opacity: 0.8;
+.seal-past {
+  --tone: var(--stone);
+  opacity: 0.7;
 }
 .seal-lg {
   width: 84px;
-  height: 84px;
+  height: 88px;
+  border-radius: 20px;
 }
 .seal-lg .seal-day {
-  font-size: 1.95rem;
+  font-size: 2rem;
 }
 .seal-lg .seal-month {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
 }
 
 /* ---------- event card ---------- */
@@ -687,12 +657,11 @@ button {
   font-size: 1.12rem;
   line-height: 1.22;
   letter-spacing: -0.005em;
-  font-variation-settings: "SOFT" 60;
   text-wrap: pretty;
 }
 .is-cancelled .card-title {
   text-decoration: line-through;
-  text-decoration-color: var(--wax-hi);
+  text-decoration-color: var(--accent-hi);
   color: var(--ink-muted);
 }
 .new-tag {
@@ -704,14 +673,14 @@ button {
   font-family: var(--font-ui);
   font-size: 0.7rem;
   font-weight: 700;
-  background: color-mix(in srgb, var(--brass) 22%, transparent);
-  color: var(--brass);
+  background: color-mix(in srgb, var(--yellow) 22%, transparent);
+  color: var(--yellow);
 }
 .fav-mark {
   display: inline-block;
   vertical-align: -2px;
   margin-left: 6px;
-  color: var(--wax-hi);
+  color: var(--accent-hi);
   fill: currentColor;
 }
 .card-meta {
@@ -754,34 +723,38 @@ button {
   color: var(--ink-muted);
 }
 .status-open {
-  color: var(--moss);
+  color: var(--green);
 }
 .status-waitlist,
 .status-soon {
-  color: var(--amber);
+  color: var(--yellow);
 }
 .status-cancelled {
   color: var(--danger);
 }
 .deadline {
-  color: var(--wax-hi);
+  color: var(--accent-hi);
 }
 .card-cta {
   position: relative;
+  transition: background 0.15s, transform 0.15s;
   z-index: 2;
   flex: none;
   align-self: center;
   padding: 9px 14px;
   border-radius: 999px;
-  background: var(--wax);
-  color: var(--wax-ink);
+  background: var(--accent);
+  color: var(--accent-ink);
   font-size: 0.85rem;
   font-weight: 650;
   text-decoration: none;
-  box-shadow: 0 2px 0 var(--wax-deep);
 }
 .card-cta:hover {
-  background: var(--wax-hi);
+  background: var(--accent-hi);
+}
+.card-cta:active,
+.btn:active {
+  transform: scale(0.97);
 }
 @media (max-width: 559px) {
   .card {
@@ -824,14 +797,13 @@ button {
 .btn.primary:hover {
   opacity: 0.9;
 }
-.btn.wax {
-  background: var(--wax);
-  border-color: var(--wax);
-  color: var(--wax-ink);
-  box-shadow: 0 3px 0 var(--wax-deep);
+.btn.accent {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
 }
-.btn.wax:hover {
-  background: var(--wax-hi);
+.btn.accent:hover {
+  background: var(--accent-hi);
 }
 .btn.ghost {
   background: transparent;
@@ -1002,11 +974,11 @@ legend {
   transition: transform 0.18s;
 }
 .switch input:checked {
-  background: var(--wax);
+  background: var(--accent);
 }
 .switch input:checked::after {
   transform: translateX(18px);
-  background: var(--wax-ink);
+  background: var(--accent-ink);
 }
 .switch input:disabled {
   opacity: 0.5;
@@ -1146,12 +1118,11 @@ legend {
   font-size: clamp(1.6rem, 6vw, 2.1rem);
   line-height: 1.08;
   letter-spacing: -0.015em;
-  font-variation-settings: "SOFT" 100;
   text-wrap: balance;
 }
 .detail.is-cancelled .detail-title {
   text-decoration: line-through;
-  text-decoration-color: var(--wax-hi);
+  text-decoration-color: var(--accent-hi);
 }
 .banner {
   margin: 16px 0 0;
@@ -1160,7 +1131,7 @@ legend {
   font-weight: 600;
 }
 .banner-cancelled {
-  background: color-mix(in srgb, var(--wax) 20%, transparent);
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
   color: var(--danger);
 }
 .register {
@@ -1208,8 +1179,8 @@ legend {
   color: var(--ink);
 }
 .action.is-on {
-  color: var(--wax-hi);
-  border-color: color-mix(in srgb, var(--wax) 50%, transparent);
+  color: var(--accent-hi);
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
 }
 .action.is-on .icon path {
   fill: currentColor;
@@ -1231,7 +1202,7 @@ legend {
   gap: 12px;
 }
 .facts dt {
-  color: var(--brass);
+  color: var(--yellow);
   padding-top: 2px;
 }
 .facts dd {
@@ -1243,14 +1214,13 @@ legend {
   font-size: 0.875rem;
 }
 .facts a {
-  color: var(--brass);
+  color: var(--yellow);
 }
 .detail-summary {
   margin: 24px 0 0;
   font-family: var(--font-display);
   font-size: 1.15rem;
   line-height: 1.5;
-  font-variation-settings: "SOFT" 50;
   max-width: 62ch;
 }
 .detail-text {
@@ -1261,7 +1231,7 @@ legend {
   overflow-wrap: anywhere;
 }
 .detail-text a {
-  color: var(--brass);
+  color: var(--yellow);
 }
 .tags {
   display: flex;
@@ -1343,7 +1313,7 @@ legend {
   border-color: var(--line-strong);
 }
 .day.is-selected {
-  border-color: var(--brass);
+  border-color: var(--yellow);
 }
 .day-num {
   padding: 0 6px;
@@ -1357,7 +1327,7 @@ legend {
   margin-left: 3px;
   padding: 0 6px;
   border-radius: 999px;
-  background: var(--brass);
+  background: var(--yellow);
   color: var(--bg);
 }
 .day-events {
@@ -1381,17 +1351,17 @@ legend {
 .bar-label {
   display: none;
 }
-.tone-wax {
-  --tone: var(--wax);
+.tone-open {
+  --tone: var(--accent);
 }
-.tone-brass {
-  --tone: #b58a35;
+.tone-soon {
+  --tone: var(--yellow);
 }
-.tone-stone {
+.tone-closed {
   --tone: var(--stone);
 }
-.tone-ash {
-  --tone: #464e4a;
+.tone-past {
+  --tone: var(--line-strong);
 }
 .more {
   padding: 0 6px;
@@ -1417,8 +1387,9 @@ legend {
     text-overflow: ellipsis;
     color: #fff;
   }
-  .tone-brass .bar-label {
-    color: #24180a;
+  .tone-open .bar-label,
+  .tone-soon .bar-label {
+    color: var(--accent-ink);
   }
 }
 .legend {
@@ -1476,9 +1447,8 @@ legend {
 }
 .empty-seal.is-sealed {
   border: 0;
-  background: radial-gradient(circle at 50% 50%, var(--wax) 0 52%, var(--wax-deep) 100%);
-  color: var(--wax-ink);
-  box-shadow: 0 3px 0 var(--wax-deep);
+  background: radial-gradient(circle at 50% 50%, var(--accent) 0 52%, color-mix(in srgb, var(--accent) 70%, black) 100%);
+  color: var(--accent-ink);
 }
 .toasts {
   position: fixed;
@@ -1522,8 +1492,8 @@ legend {
   gap: 6px;
 }
 .chip-radius.is-on {
-  background: color-mix(in srgb, var(--brass) 18%, var(--bg-raised));
-  border-color: color-mix(in srgb, var(--brass) 60%, transparent);
+  background: color-mix(in srgb, var(--yellow) 18%, var(--bg-raised));
+  border-color: color-mix(in srgb, var(--yellow) 60%, transparent);
   color: var(--ink);
 }
 .radius-origin {
@@ -1559,7 +1529,7 @@ legend {
   background: var(--bg-hover);
 }
 .place-results .icon {
-  color: var(--brass);
+  color: var(--yellow);
 }
 .chip:disabled {
   opacity: 0.45;
@@ -1573,8 +1543,8 @@ legend {
   margin: 10px 0 0;
   padding: 6px 6px 6px 12px;
   border-radius: var(--radius-m);
-  background: color-mix(in srgb, var(--brass) 12%, var(--bg-raised));
-  border: 1px solid color-mix(in srgb, var(--brass) 40%, transparent);
+  background: color-mix(in srgb, var(--yellow) 12%, var(--bg-raised));
+  border: 1px solid color-mix(in srgb, var(--yellow) 40%, transparent);
   font-size: 0.9rem;
 }
 .radius-chip > span {
@@ -1584,7 +1554,7 @@ legend {
   gap: 6px;
 }
 .radius-chip .icon {
-  color: var(--brass);
+  color: var(--yellow);
 }
 .radius-chip small {
   flex-basis: 100%;
