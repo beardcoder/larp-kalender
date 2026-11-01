@@ -56,7 +56,9 @@ export class App {
     const coordsEdited = ("lat" in patch && patch.lat !== current.lat) || ("lng" in patch && patch.lng !== current.lng);
     if (addressChanged && !coordsEdited) Object.assign(patch, { lat: null, lng: null });
     const event = updateEvent(this.db, id, patch, { userId: user?.id ?? null, checked });
-    if (event) this.afterSave(event);
+    if (!event) return null;
+    if (this.push.recordChanges(current, event)) this.push.scheduleAnnouncement();
+    this.afterSave(event);
     return event;
   }
 

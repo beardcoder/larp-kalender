@@ -1,6 +1,6 @@
 /**
  * Web push notifications: VAPID keys (generated once and stored in the database), subscriptions with
- * preferences, batched "new events" announcements and reminders for bookmarked events.
+ * preferences, batched announcements of new events and relevant changes, reminders for bookmarked events.
  */
 
 import type { Database } from "bun:sqlite";
@@ -9,7 +9,7 @@ import { z } from "zod";
 import { getSetting, nowIso, setSetting } from "./db.ts";
 import { listPublicEvents, today } from "./repo/events.ts";
 import type { LarpEvent } from "./shared/types.ts";
-import { GENRES, keys } from "./shared/vocab.ts";
+import { EVENT_TYPES, GENRES, REGISTRATION_STATUS, keys } from "./shared/vocab.ts";
 import { daysBetween, formatDateRange } from "./shared/format.ts";
 
 /** Only known browser push services may be used as endpoints (prevents SSRF via push delivery). */
@@ -37,6 +37,7 @@ export const subscriptionSchema = z.object({
     keys: z.object({ p256dh: z.string().max(200), auth: z.string().max(100) }),
   }),
   notifyNew: z.boolean().default(true),
+  notifyUpdates: z.boolean().default(true),
   reminders: z.boolean().default(true),
   genres: z.array(z.enum(keys(GENRES))).default([]),
   favorites: z.array(z.number().int().positive()).max(500).default([]),
@@ -50,16 +51,37 @@ interface SubRow {
   p256dh: string;
   auth: string;
   notify_new: number;
+  notify_updates: number;
   reminders: number;
   genres: string;
   favorites: string;
 }
 
-interface Payload {
+export interface Payload {
   title: string;
   body: string;
   url: string;
   tag?: string;
+}
+
+/** Delivery function; replaceable in tests. Returns the HTTP status or throws with statusCode. */
+export type Sender = (sub: { endpoint: string; keys: { p256dh: string; auth: string } }, payload: string) => Promise<unknown>;
+
+/** German one-line descriptions of the changes that matter to players. Empty if nothing relevant changed. */
+export function describeChanges(before: LarpEvent, after: LarpEvent): string[] {
+  const out: string[] = [];
+  if (after.status === "cancelled" && before.status !== "cancelled") return ["abgesagt"];
+  if (before.status === "cancelled" && after.status === "published") out.push("findet doch statt");
+  if (before.registrationStatus !== after.registrationStatus && after.registrationStatus !== "unknown") {
+    out.push(after.registrationStatus === "open" ? "Anmeldung jetzt offen" : REGISTRATION_STATUS[after.registrationStatus]);
+  }
+  if (before.startDate !== after.startDate || before.endDate !== after.endDate)
+    out.push(`neues Datum: ${formatDateRange(after.startDate, after.endDate)}`);
+  if ((before.city ?? "") !== (after.city ?? "") && after.city) out.push(`neuer Ort: ${after.city}`);
+  if (!before.registrationUrl && after.registrationUrl) out.push("Anmeldelink ergänzt");
+  if (before.registrationDeadline !== after.registrationDeadline && after.registrationDeadline)
+    out.push(`Anmeldeschluss: ${formatDateRange(after.registrationDeadline, after.registrationDeadline)}`);
+  return out;
 }
 
 export class Push {
@@ -70,6 +92,7 @@ export class Push {
   constructor(
     private db: Database,
     private contact: string,
+    private sender?: Sender,
   ) {
     const stored = getSetting(db, "vapid");
     if (stored) {
@@ -90,10 +113,10 @@ export class Push {
     const now = nowIso();
     this.db
       .query(
-        `INSERT INTO push_subscriptions (endpoint, p256dh, auth, notify_new, reminders, genres, favorites, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO push_subscriptions (endpoint, p256dh, auth, notify_new, notify_updates, reminders, genres, favorites, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(endpoint) DO UPDATE SET p256dh = excluded.p256dh, auth = excluded.auth, notify_new = excluded.notify_new,
-           reminders = excluded.reminders, genres = excluded.genres, favorites = excluded.favorites,
+           notify_updates = excluded.notify_updates, reminders = excluded.reminders, genres = excluded.genres, favorites = excluded.favorites,
            updated_at = excluded.updated_at, failures = 0`,
       )
       .run(
@@ -101,6 +124,7 @@ export class Push {
         input.subscription.keys.p256dh,
         input.subscription.keys.auth,
         input.notifyNew ? 1 : 0,
+        input.notifyUpdates ? 1 : 0,
         input.reminders ? 1 : 0,
         JSON.stringify(input.genres),
         JSON.stringify(input.favorites),
@@ -120,15 +144,14 @@ export class Push {
 
   private async send(sub: SubRow, payload: Payload): Promise<boolean> {
     try {
-      await webpush.sendNotification(
-        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-        JSON.stringify(payload),
-        {
+      const target = { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } };
+      if (this.sender) await this.sender(target, JSON.stringify(payload));
+      else
+        await webpush.sendNotification(target, JSON.stringify(payload), {
           TTL: 60 * 60 * 24,
           timeout: 10_000,
           vapidDetails: { subject: `mailto:${this.contact}`, ...this.vapid },
-        },
-      );
+        });
       if (sub.id) this.db.query("UPDATE push_subscriptions SET failures = 0 WHERE id = ?").run(sub.id);
       return true;
     } catch (err) {
@@ -151,50 +174,68 @@ export class Push {
     return this.send(sub, { title: "Benachrichtigungen aktiv", body: "So sehen Hinweise vom LARP-Kalender aus.", url: "/", tag: "test" });
   }
 
-  /** Call after an event was published; announcements are batched to one message per subscriber. */
-  scheduleAnnouncement(): void {
-    if (this.debounce) clearTimeout(this.debounce);
-    this.debounce = setTimeout(() => void this.announceNew(), 3 * 60_000);
+  /** Records relevant changes of an already announced event; they are pushed with the next batch. */
+  recordChanges(before: LarpEvent, after: LarpEvent): boolean {
+    if (after.status === "draft") return false;
+    const row = this.db.query("SELECT announced_at FROM events WHERE id = ?").get(after.id) as { announced_at: string | null } | null;
+    if (!row?.announced_at) return false; // not announced yet: the "new" announcement covers it
+    if (after.endDate < today()) return false;
+    const changes = describeChanges(before, after);
+    if (!changes.length) return false;
+    this.db.query("INSERT INTO event_changes (event_id, summary, created_at) VALUES (?, ?, ?)").run(after.id, changes.join(", "), nowIso());
+    return true;
   }
 
-  async announceNew(): Promise<void> {
+  /** Call after events were published or changed. Bursts (e.g. an AI research run) end up in one message. */
+  scheduleAnnouncement(): void {
+    if (this.debounce) clearTimeout(this.debounce);
+    this.debounce = setTimeout(() => void this.announce(), 2 * 60_000);
+  }
+
+  /** Sends pending "new event" and "event changed" notifications, batched per subscriber. */
+  async announce(): Promise<{ newEvents: number; changes: number; sent: number }> {
     this.debounce = null;
-    const pending = (this.db.query("SELECT id FROM events WHERE announced_at IS NULL AND status = 'published'").all() as { id: number }[]).map(
+    const now = nowIso();
+    const pendingNew = (this.db.query("SELECT id FROM events WHERE announced_at IS NULL AND status = 'published'").all() as { id: number }[]).map(
       (r) => r.id,
     );
-    if (!pending.length) return;
-    const events = listPublicEvents(this.db, { statuses: ["published"], ids: pending });
-    // Past events are marked as announced too, but never pushed.
-    this.db
-      .query(`UPDATE events SET announced_at = ? WHERE id IN (${pending.map(() => "?").join(",")})`)
-      .run(nowIso(), ...pending);
-    if (!events.length) return;
+    const changeRows = this.db.query("SELECT id, event_id, summary FROM event_changes WHERE announced_at IS NULL ORDER BY id").all() as {
+      id: number;
+      event_id: number;
+      summary: string;
+    }[];
+    if (!pendingNew.length && !changeRows.length) return { newEvents: 0, changes: 0, sent: 0 };
 
-    const subs = this.db.query("SELECT * FROM push_subscriptions WHERE notify_new = 1").all() as SubRow[];
+    const newEvents = pendingNew.length ? listPublicEvents(this.db, { statuses: ["published"], ids: pendingNew }) : [];
+    if (pendingNew.length)
+      this.db.query(`UPDATE events SET announced_at = ? WHERE id IN (${pendingNew.map(() => "?").join(",")})`).run(now, ...pendingNew);
+    this.db.query("UPDATE event_changes SET announced_at = ? WHERE announced_at IS NULL").run(now);
+
+    // Merge several changes of the same event into one line.
+    const changedIds = [...new Set(changeRows.map((c) => c.event_id))];
+    const changedEvents = changedIds.length ? listPublicEvents(this.db, { ids: changedIds, includePast: false }) : [];
+    const changes = changedEvents.map((e) => ({
+      event: e,
+      summary: [...new Set(changeRows.filter((c) => c.event_id === e.id).flatMap((c) => c.summary.split(", ")))].join(", "),
+    }));
+
+    const subs = this.db.query("SELECT * FROM push_subscriptions").all() as SubRow[];
+    let sent = 0;
     for (const sub of subs) {
       const genres: string[] = JSON.parse(sub.genres);
-      const matching = genres.length ? events.filter((e) => e.genres.some((g) => genres.includes(g))) : events;
-      if (!matching.length) continue;
-      const first = matching[0]!;
-      const payload: Payload =
-        matching.length === 1
-          ? {
-              title: `Neu: ${first.title}`,
-              body: [formatDateRange(first.startDate, first.endDate), first.city].filter(Boolean).join(" · "),
-              url: `/termin/${first.slug}`,
-              tag: `new-${first.id}`,
-            }
-          : {
-              title: `${matching.length} neue Veranstaltungen`,
-              body: matching
-                .slice(0, 3)
-                .map((e) => e.title)
-                .join(", ") + (matching.length > 3 ? " …" : ""),
-              url: "/?neu=1",
-              tag: "new-batch",
-            };
-      await this.send(sub, payload);
+      const favorites: number[] = JSON.parse(sub.favorites);
+      const genreMatch = (e: LarpEvent) => !genres.length || e.genres.some((g) => genres.includes(g));
+
+      const fresh = sub.notify_new ? newEvents.filter(genreMatch) : [];
+      if (fresh.length && (await this.send(sub, newPayload(fresh)))) sent++;
+
+      const relevant = changes.filter(
+        (c) => (sub.reminders && favorites.includes(c.event.id)) || (sub.notify_updates && genreMatch(c.event)),
+      );
+      if (relevant.length && (await this.send(sub, changePayload(relevant, favorites)))) sent++;
     }
+    console.log(`[push] announced ${newEvents.length} new event(s) and ${changes.length} change(s): ${sent} notification(s) to ${subs.length} device(s)`);
+    return { newEvents: newEvents.length, changes: changes.length, sent };
   }
 
   /** Reminders for bookmarked events: registration opens, deadline approaching, start in a week, cancellation. */
@@ -226,7 +267,7 @@ export class Push {
   }
 
   private reminderFor(e: LarpEvent, t: string): { kind: string; payload: Omit<Payload, "url"> } | null {
-    if (e.status === "cancelled") return { kind: "cancelled", payload: { title: `Abgesagt: ${e.title}`, body: "Die Veranstaltung findet nicht statt." } };
+    if (e.status === "cancelled") return null; // announced as a change
     const open = ["open", "waitlist"].includes(e.registrationStatus);
     if (e.registrationDeadline && open) {
       const d = daysBetween(t, e.registrationDeadline);
@@ -257,7 +298,7 @@ export class Push {
     // Hourly: reminders and any pending announcements (e.g. after a restart).
     const tick = async () => {
       try {
-        await this.announceNew();
+        await this.announce();
         await this.sendReminders();
       } catch (err) {
         console.error("[push] scheduler error", err);
@@ -271,4 +312,42 @@ export class Push {
     if (this.timer) clearInterval(this.timer);
     if (this.debounce) clearTimeout(this.debounce);
   }
+}
+
+function newPayload(events: LarpEvent[]): Payload {
+  const first = events[0]!;
+  if (events.length === 1)
+    return {
+      title: `Neu: ${first.title}`,
+      body: [formatDateRange(first.startDate, first.endDate), EVENT_TYPES[first.eventType], first.city].filter(Boolean).join(" · "),
+      url: `/termin/${first.slug}`,
+      tag: `new-${first.id}`,
+    };
+  return {
+    title: `${events.length} neue Veranstaltungen`,
+    body: events.slice(0, 3).map((e) => e.title).join(", ") + (events.length > 3 ? " …" : ""),
+    url: "/?neu=1",
+    tag: "new-batch",
+  };
+}
+
+function changePayload(changes: { event: LarpEvent; summary: string }[], favorites: number[]): Payload {
+  const first = changes[0]!;
+  if (changes.length === 1)
+    return {
+      title: `${favorites.includes(first.event.id) ? "Merkliste" : "Update"}: ${first.event.title}`,
+      body: first.summary.charAt(0).toUpperCase() + first.summary.slice(1),
+      url: `/termin/${first.event.slug}`,
+      tag: `update-${first.event.id}`,
+    };
+  const allFavorites = changes.every((c) => favorites.includes(c.event.id));
+  return {
+    title: `${changes.length} Veranstaltungen aktualisiert`,
+    body: changes
+      .slice(0, 3)
+      .map((c) => `${c.event.title}: ${c.summary}`)
+      .join(" · "),
+    url: allFavorites ? "/merkliste" : "/",
+    tag: "update-batch",
+  };
 }

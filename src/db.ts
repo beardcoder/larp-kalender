@@ -149,6 +149,17 @@ const MIGRATIONS: string[] = [
   ALTER TABLE users ADD COLUMN feed_token TEXT;
   CREATE UNIQUE INDEX users_feed_token ON users(feed_token);
   `,
+  /* 3: push notifications for relevant changes of events */ `
+  ALTER TABLE push_subscriptions ADD COLUMN notify_updates INTEGER NOT NULL DEFAULT 1;
+  CREATE TABLE event_changes (
+    id INTEGER PRIMARY KEY,
+    event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+    summary TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    announced_at TEXT
+  );
+  CREATE INDEX event_changes_pending ON event_changes(announced_at);
+  `,
 ];
 
 export function openDb(dataDir: string, file = "larp-kalender.sqlite"): Database {

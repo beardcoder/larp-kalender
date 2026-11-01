@@ -136,7 +136,10 @@ function NotificationSection() {
         )
       ) : (
         <>
-          <p>Wir melden neue Veranstaltungen und erinnern dich an Termine auf deiner Merkliste: Anmeldestart, Anmeldeschluss, eine Woche vorher und bei Absagen.</p>
+          <p>
+            Wir melden neue Veranstaltungen und wichtige Änderungen (Anmeldung offen, ausgebucht, abgesagt, neues Datum) und erinnern dich an
+            Termine auf deiner Merkliste: Anmeldestart, Anmeldeschluss und eine Woche vorher.
+          </p>
           <label class="switch">
             <input
               type="checkbox"
@@ -152,14 +155,25 @@ function NotificationSection() {
                 <input type="checkbox" checked={prefs.notifyNew} onChange={(e) => pushPrefsStore.set((p) => ({ ...p, notifyNew: (e.target as HTMLInputElement).checked }))} />
                 <span>Neue Veranstaltungen</span>
               </label>
-              {prefs.notifyNew ? (
+              <label class="switch">
+                <input
+                  type="checkbox"
+                  checked={prefs.notifyUpdates !== false}
+                  onChange={(e) => pushPrefsStore.set((p) => ({ ...p, notifyUpdates: (e.target as HTMLInputElement).checked }))}
+                />
+                <span>Änderungen an Veranstaltungen</span>
+              </label>
+              {prefs.notifyNew || prefs.notifyUpdates !== false ? (
                 <div class="chips wrap" role="group" aria-label="Nur diese Genres">
                   {(Object.keys(GENRES) as Genre[]).map((g) => (
                     <button key={g} class={`chip genre-${g}${prefs.genres.includes(g) ? " is-on" : ""}`} aria-pressed={prefs.genres.includes(g)} onClick={() => toggleGenre(g)}>
                       {GENRES[g]}
                     </button>
                   ))}
-                  <p class="hint">{prefs.genres.length ? "Nur für die gewählten Genres." : "Ohne Auswahl: alle Genres."}</p>
+                  <p class="hint">
+                    {prefs.genres.length ? "Nur für die gewählten Genres." : "Ohne Auswahl: alle Genres."} Änderungen an Terminen auf deiner Merkliste
+                    bekommst du immer, solange Erinnerungen an sind.
+                  </p>
                 </div>
               ) : null}
               <label class="switch">

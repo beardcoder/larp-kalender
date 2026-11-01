@@ -7,6 +7,8 @@ import { favoritesStore } from "./state.ts";
 export interface PushPrefs {
   enabled: boolean;
   notifyNew: boolean;
+  /** Missing in preferences stored by older versions: treated as enabled. */
+  notifyUpdates?: boolean;
   reminders: boolean;
   genres: Genre[];
 }
@@ -40,6 +42,7 @@ async function sync(sub: PushSubscription): Promise<void> {
     body: JSON.stringify({
       subscription: sub.toJSON(),
       notifyNew: prefs.notifyNew,
+      notifyUpdates: prefs.notifyUpdates !== false,
       reminders: prefs.reminders,
       genres: prefs.genres,
       favorites: favoritesStore.get(),

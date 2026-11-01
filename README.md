@@ -10,8 +10,9 @@ Live: https://larp.letsbenow.de (not indexed by search engines)
 - **Public PWA** (German): agenda list grouped by month, month calendar, event detail sheet, genre/type/country
   filters, radius search around a postcode/town (`/api/places`, proxied to OpenStreetMap Nominatim with cache
   and 1 req/s throttle) or the device location, optional sorting by distance, bookmarks, "new since last visit" markers,
-  offline support, installable, web push (new events per genre, reminders for bookmarked events: registration
-  opens, deadline in ≤3 days, start in ≤7 days, cancellation), event suggestion form (lands as draft).
+  offline support, installable, pull-to-refresh, web push (new events and relevant changes – registration open,
+  waitlist/sold out, cancelled, new date or place – batched per device and filtered by genre; changes of bookmarked
+  events always; reminders: registration opens, deadline in ≤3 days, start in ≤7 days), event suggestion form (lands as draft).
 - **Accounts**: one login for frontend and backend. Visitors can register as *member* (`/mehr#konto`) to sync
   bookmarks across devices and get a private, auto-updating bookmark feed (`/kalender.ics?feed=<token>`).
   Only *admin* and *editor* accounts can open `/admin`, create API tokens, use MCP or connect AI clients.
