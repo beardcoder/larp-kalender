@@ -7,6 +7,29 @@ import { nowIso } from "../db.ts";
 
 export const SESSION_DAYS = 30;
 
+/** Argon2 needs ~19 MB per call: limit concurrency so login floods cannot exhaust memory. */
+const MAX_HASHING = 2;
+let hashing = 0;
+const waiting: (() => void)[] = [];
+
+async function withHashSlot<T>(fn: () => Promise<T>): Promise<T> {
+  if (hashing >= MAX_HASHING) {
+    if (waiting.length > 50) throw new Error("Server ausgelastet. Bitte gleich erneut versuchen.");
+    await new Promise<void>((resolve) => waiting.push(resolve));
+  }
+  hashing++;
+  try {
+    return await fn();
+  } finally {
+    hashing--;
+    waiting.shift()?.();
+  }
+}
+
+const hashPassword = (password: string) =>
+  withHashSlot(() => Bun.password.hash(password, { algorithm: "argon2id", memoryCost: 19456, timeCost: 2 }));
+const verifyPassword = (password: string, hash: string) => withHashSlot(() => Bun.password.verify(password, hash));
+
 export function randomToken(prefix: string, bytes = 32): string {
   const buf = crypto.getRandomValues(new Uint8Array(bytes));
   return prefix + Buffer.from(buf).toString("base64url");
@@ -51,7 +74,7 @@ export async function createUser(
   db: Database,
   input: { email: string; name: string; password: string; role: UserRole },
 ): Promise<User> {
-  const hash = await Bun.password.hash(input.password, { algorithm: "argon2id", memoryCost: 19456, timeCost: 2 });
+  const hash = await hashPassword(input.password);
   const res = db
     .query("INSERT INTO users (email, name, password_hash, role, created_at) VALUES (?, ?, ?, ?, ?)")
     .run(input.email.trim().toLowerCase(), input.name.trim(), hash, input.role, nowIso());
@@ -71,7 +94,7 @@ export async function updateUser(
   if (patch.disabled !== undefined) sets.push("disabled = ?"), params.push(patch.disabled ? 1 : 0);
   if (patch.password) {
     sets.push("password_hash = ?");
-    params.push(await Bun.password.hash(patch.password, { algorithm: "argon2id", memoryCost: 19456, timeCost: 2 }));
+    params.push(await hashPassword(patch.password));
   }
   if (sets.length) db.query(`UPDATE users SET ${sets.join(", ")} WHERE id = ?`).run(...params, id);
   if (patch.disabled || patch.password) revokeUserSessions(db, id);
@@ -88,11 +111,11 @@ let dummyHash: Promise<string> | null = null;
 export async function verifyLogin(db: Database, email: string, password: string): Promise<User | null> {
   const row = db.query("SELECT * FROM users WHERE email = ?").get(email.trim().toLowerCase()) as UserRow | null;
   if (!row) {
-    dummyHash ??= Bun.password.hash("dummy-password", { algorithm: "argon2id", memoryCost: 19456, timeCost: 2 });
-    await Bun.password.verify(password, await dummyHash);
+    dummyHash ??= hashPassword("dummy-password");
+    await verifyPassword(password, await dummyHash);
     return null;
   }
-  if (row.disabled || !(await Bun.password.verify(password, row.password_hash))) return null;
+  if (row.disabled || !(await verifyPassword(password, row.password_hash))) return null;
   db.query("UPDATE users SET last_login_at = ? WHERE id = ?").run(nowIso(), row.id);
   return toUser(row);
 }
@@ -129,6 +152,7 @@ export function deleteSession(db: Database, token: string): void {
 export function revokeUserSessions(db: Database, userId: number): void {
   db.query("DELETE FROM sessions WHERE user_id = ?").run(userId);
   db.query("DELETE FROM oauth_tokens WHERE user_id = ?").run(userId);
+  db.query("DELETE FROM api_tokens WHERE user_id = ?").run(userId);
 }
 
 /* ---------- personal API tokens (Bearer, for MCP clients with static headers and REST automation) ---------- */
@@ -182,4 +206,8 @@ export function cleanupExpired(db: Database): void {
   db.query("DELETE FROM sessions WHERE expires_at <= ?").run(now);
   db.query("DELETE FROM oauth_codes WHERE expires_at <= ?").run(now);
   db.query("DELETE FROM oauth_tokens WHERE expires_at <= ?").run(now);
+  // Registered clients that never completed an authorization.
+  db.query(
+    `DELETE FROM oauth_clients WHERE created_at <= ? AND NOT EXISTS (SELECT 1 FROM oauth_tokens t WHERE t.client_id = oauth_clients.client_id)`,
+  ).run(new Date(Date.now() - 86_400_000).toISOString());
 }

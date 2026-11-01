@@ -12,9 +12,28 @@ import type { LarpEvent } from "./shared/types.ts";
 import { GENRES, keys } from "./shared/vocab.ts";
 import { daysBetween, formatDateRange } from "./shared/format.ts";
 
+/** Only known browser push services may be used as endpoints (prevents SSRF via push delivery). */
+const PUSH_HOSTS = ["fcm.googleapis.com", "android.googleapis.com", "push.services.mozilla.com", "notify.windows.com", "push.apple.com"];
+
+function isPushServiceUrl(value: string): boolean {
+  try {
+    const u = new URL(value);
+    const host = u.hostname.toLowerCase();
+    return u.protocol === "https:" && PUSH_HOSTS.some((h) => host === h || host.endsWith(`.${h}`));
+  } catch {
+    return false;
+  }
+}
+
+const MAX_SUBSCRIPTIONS = 20_000;
+
 export const subscriptionSchema = z.object({
   subscription: z.object({
-    endpoint: z.string().url().max(1000),
+    endpoint: z
+      .string()
+      .url()
+      .max(1000)
+      .refine(isPushServiceUrl, "Unbekannter Push-Dienst"),
     keys: z.object({ p256dh: z.string().max(200), auth: z.string().max(100) }),
   }),
   notifyNew: z.boolean().default(true),
@@ -65,7 +84,9 @@ export class Push {
     return this.vapid.publicKey;
   }
 
-  subscribe(input: SubscriptionInput): void {
+  subscribe(input: SubscriptionInput): boolean {
+    const exists = this.db.query("SELECT 1 FROM push_subscriptions WHERE endpoint = ?").get(input.subscription.endpoint);
+    if (!exists && this.count() >= MAX_SUBSCRIPTIONS) return false;
     const now = nowIso();
     this.db
       .query(
@@ -86,6 +107,7 @@ export class Push {
         now,
         now,
       );
+    return true;
   }
 
   unsubscribe(endpoint: string): void {
@@ -103,6 +125,7 @@ export class Push {
         JSON.stringify(payload),
         {
           TTL: 60 * 60 * 24,
+          timeout: 10_000,
           vapidDetails: { subject: `mailto:${this.contact}`, ...this.vapid },
         },
       );

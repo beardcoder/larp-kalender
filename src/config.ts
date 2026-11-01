@@ -20,6 +20,8 @@ export interface Config {
   allowIndexing: boolean;
   /** Use secure cookies (HTTPS). */
   secureCookies: boolean;
+  /** Additional hosts allowed as OAuth redirect targets for MCP clients. */
+  oauthRedirectHosts: string[];
 }
 
 export function loadConfig(env: Record<string, string | undefined> = process.env): Config {
@@ -35,6 +37,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     contactEmail: env.CONTACT_EMAIL || env.ADMIN_EMAIL || "admin@example.org",
     geocode: (env.GEOCODE ?? "true") !== "false",
     allowIndexing: env.ALLOW_INDEXING === "true",
+    oauthRedirectHosts: (env.OAUTH_REDIRECT_HOSTS ?? "").split(",").map((h) => h.trim()).filter(Boolean),
     secureCookies: env.SECURE_COOKIES ? env.SECURE_COOKIES === "true" : publicUrl.startsWith("https://"),
   };
 }

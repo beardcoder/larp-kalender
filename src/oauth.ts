@@ -63,14 +63,26 @@ export function wwwAuthenticate(base: string): string {
   return `Bearer resource_metadata="${base}/.well-known/oauth-protected-resource/mcp", scope="${SCOPE}"`;
 }
 
+/**
+ * Hosts allowed as OAuth redirect targets. Restricting registration to known MCP clients prevents consent
+ * phishing with look-alike clients. Extend via OAUTH_REDIRECT_HOSTS (comma separated).
+ */
+let redirectHosts = ["claude.ai", "claude.com", "chatgpt.com", "chat.openai.com", "platform.openai.com"];
+
+export function configureOAuth(extraHosts: string[]): void {
+  redirectHosts = [...new Set([...redirectHosts, ...extraHosts.map((h) => h.toLowerCase())])];
+}
+
 function validRedirectUri(uri: string): boolean {
+  if (uri.length > 512) return false;
   try {
     const u = new URL(uri);
     if (u.hash) return false;
-    if (u.protocol === "https:") return true;
+    // Loopback redirects for local clients such as Claude Code (any port).
     if (u.protocol === "http:") return ["localhost", "127.0.0.1", "[::1]"].includes(u.hostname);
-    // Native apps may use private-use URI schemes (e.g. claude://, cursor://).
-    return /^[a-z][a-z0-9+.-]*:$/.test(u.protocol) && !["javascript:", "data:", "file:"].includes(u.protocol);
+    if (u.protocol !== "https:") return false;
+    const host = u.hostname.toLowerCase();
+    return redirectHosts.some((h) => host === h || host.endsWith(`.${h}`));
   } catch {
     return false;
   }
@@ -84,8 +96,11 @@ export async function handleRegister(db: Database, request: Request): Promise<Re
     return oauthError("invalid_client_metadata", "Request body must be JSON.");
   }
   const redirectUris = Array.isArray(body.redirect_uris) ? body.redirect_uris.filter((u) => typeof u === "string") : [];
-  if (!redirectUris.length || !redirectUris.every(validRedirectUri))
-    return oauthError("invalid_redirect_uri", "redirect_uris must be https (or http on localhost).");
+  if (!redirectUris.length || redirectUris.length > 5 || !redirectUris.every(validRedirectUri))
+    return oauthError(
+      "invalid_redirect_uri",
+      `redirect_uris must be http://localhost or https on an allowed host (${redirectHosts.join(", ")}).`,
+    );
   const name = typeof body.client_name === "string" ? body.client_name.slice(0, 100) : "MCP-Client";
   const authMethod = typeof body.token_endpoint_auth_method === "string" ? body.token_endpoint_auth_method : "none";
   const clientId = randomToken("mcp_", 16);
@@ -151,13 +166,10 @@ function checkAuthorize(db: Database, p: AuthorizeParams): { client: ClientRow }
   if (!client) return { error: page("Unbekannte Anwendung", "<p>Diese Anwendung ist nicht registriert. Verbinde sie bitte neu.</p>", 400) };
   if (!JSON.parse(client.redirect_uris).includes(p.redirect_uri))
     return { error: page("Ungültige Weiterleitung", "<p>Die Weiterleitungsadresse passt nicht zur Anwendung.</p>", 400) };
-  const fail = (error: string, desc: string) => {
-    const u = new URL(p.redirect_uri);
-    u.searchParams.set("error", error);
-    u.searchParams.set("error_description", desc);
-    if (p.state) u.searchParams.set("state", p.state);
-    return { error: redirectTo(u.toString()) };
-  };
+  // Malformed requests get an error page instead of a redirect (no open redirect, RFC 9700 4.11.2).
+  const fail = (_error: string, desc: string) => ({
+    error: page("Ungültige Anfrage", `<p>Die Anwendung hat eine fehlerhafte Anmeldeanfrage gesendet.</p><p class="muted">${escapeHtml(desc)}</p>`, 400),
+  });
   if (p.response_type !== "code") return fail("unsupported_response_type", "Only response_type=code is supported.");
   if (!p.code_challenge || p.code_challenge_method !== "S256") return fail("invalid_request", "PKCE with S256 is required.");
   return { client };
@@ -175,6 +187,7 @@ export async function handleAuthorizePost(
   request: Request,
   sessionToken: string | undefined,
   setSession: (token: string) => void,
+  allowLoginAttempt: () => boolean,
 ): Promise<Response> {
   const form = await request.formData();
   const p = readParams(form);
@@ -190,6 +203,7 @@ export async function handleAuthorizePost(
 
   let user = sessionUser(db, sessionToken);
   if (!user) {
+    if (!allowLoginAttempt()) return consentPage(check.client, p, null, "Zu viele Anmeldeversuche. Bitte in 15 Minuten erneut versuchen.");
     user = await verifyLogin(db, String(form.get("email") ?? ""), String(form.get("password") ?? ""));
     if (!user) return consentPage(check.client, p, null, "E-Mail oder Passwort ist falsch.");
     setSession(createSession(db, user.id));
@@ -219,20 +233,12 @@ function issueTokens(db: Database, clientId: string, userId: number, refreshToke
   db.query(
     "INSERT INTO oauth_tokens (token_hash, kind, client_id, user_id, scope, created_at, expires_at) VALUES (?, 'access', ?, ?, ?, ?, ?)",
   ).run(sha256(access), clientId, userId, SCOPE, nowIso(), new Date(now + ACCESS_TTL_S * 1000).toISOString());
-  let refresh = refreshToken;
-  if (!refresh) {
-    refresh = randomToken("lkr_", 32);
-    db.query(
-      "INSERT INTO oauth_tokens (token_hash, kind, client_id, user_id, scope, created_at, expires_at) VALUES (?, 'refresh', ?, ?, ?, ?, ?)",
-    ).run(sha256(refresh), clientId, userId, SCOPE, nowIso(), new Date(now + REFRESH_TTL_S * 1000).toISOString());
-  } else {
-    // Sliding expiry: scheduled jobs that refresh regularly never lose access.
-    db.query("UPDATE oauth_tokens SET expires_at = ?, last_used_at = ? WHERE token_hash = ?").run(
-      new Date(now + REFRESH_TTL_S * 1000).toISOString(),
-      nowIso(),
-      sha256(refresh),
-    );
-  }
+  // Refresh token rotation (OAuth 2.1 for public clients): the used token is replaced by a new one.
+  if (refreshToken) db.query("DELETE FROM oauth_tokens WHERE token_hash = ?").run(sha256(refreshToken));
+  const refresh = randomToken("lkr_", 32);
+  db.query(
+    "INSERT INTO oauth_tokens (token_hash, kind, client_id, user_id, scope, created_at, expires_at) VALUES (?, 'refresh', ?, ?, ?, ?, ?)",
+  ).run(sha256(refresh), clientId, userId, SCOPE, nowIso(), new Date(now + REFRESH_TTL_S * 1000).toISOString());
   return json({ access_token: access, token_type: "Bearer", expires_in: ACCESS_TTL_S, refresh_token: refresh, scope: SCOPE });
 }
 
@@ -299,7 +305,14 @@ export async function handleToken(db: Database, request: Request): Promise<Respo
 
 export async function handleRevoke(db: Database, request: Request): Promise<Response> {
   const body = await readTokenRequest(request).catch(() => ({}) as Record<string, string>);
-  if (body.token) db.query("DELETE FROM oauth_tokens WHERE token_hash = ?").run(sha256(body.token));
+  if (body.token) {
+    const row = db.query("SELECT kind, client_id, user_id FROM oauth_tokens WHERE token_hash = ?").get(sha256(body.token)) as
+      | { kind: string; client_id: string; user_id: number }
+      | null;
+    // Revoking a refresh token ends the whole grant, including its access tokens.
+    if (row?.kind === "refresh") db.query("DELETE FROM oauth_tokens WHERE client_id = ? AND user_id = ?").run(row.client_id, row.user_id);
+    else db.query("DELETE FROM oauth_tokens WHERE token_hash = ?").run(sha256(body.token));
+  }
   return new Response(null, { status: 200 });
 }
 
@@ -338,7 +351,7 @@ function consentPage(client: ClientRow, p: AuthorizeParams, user: User | null, e
   const body = `
     <p><strong>${escapeHtml(client.name)}</strong> möchte auf den LARP-Kalender zugreifen und darf dann in deinem Namen
     Veranstaltungen lesen, eintragen und bearbeiten.</p>
-    <p class="muted">Weiterleitung an ${escapeHtml(host)}</p>
+    <p class="muted">Danach geht es weiter zu <strong>${escapeHtml(host)}</strong>. Erlaube den Zugriff nur, wenn du die Verbindung gerade selbst eingerichtet hast.</p>
     ${error ? `<p class="error" role="alert">${escapeHtml(error)}</p>` : ""}
     <form method="post" action="/oauth/authorize">
       ${hidden}

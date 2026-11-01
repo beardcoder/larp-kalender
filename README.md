@@ -55,6 +55,7 @@ Connect Claude Code: `claude mcp add --transport http --scope user larp-kalender
 | `PUBLIC_DIR` | `./dist/public` | Built frontend. |
 | `GEOCODE` | `true` | Geocode addresses via Nominatim. |
 | `ALLOW_INDEXING` | `false` | Allow search engines. |
+| `OAUTH_REDIRECT_HOSTS` | – | Extra hosts allowed as OAuth redirect targets (built in: claude.ai, claude.com, chatgpt.com, chat.openai.com, platform.openai.com; http://localhost always). |
 | `HOST` / `PORT` | `0.0.0.0` / `3000` | HTTP listener. |
 
 ## Development

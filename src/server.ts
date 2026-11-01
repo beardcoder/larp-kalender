@@ -11,6 +11,7 @@ import { DEFAULT_DESCRIPTION, eventMeta, renderShell, type PageMeta } from "./ht
 import { createMcpServer } from "./mcp.ts";
 import {
   authorizationServerMetadata,
+  configureOAuth,
   handleAuthorizeGet,
   handleAuthorizePost,
   handleRegister,
@@ -86,7 +87,8 @@ class RateLimiter {
     const now = Date.now();
     const entry = this.hits.get(key);
     if (!entry || entry.reset < now) {
-      if (this.hits.size > 5000) this.hits.clear();
+      // Evict only expired windows, so a flood of new keys cannot reset active lockouts.
+      if (this.hits.size > 5000) for (const [k, v] of this.hits) if (v.reset < now) this.hits.delete(k);
       this.hits.set(key, { n: 1, reset: now + this.windowMs });
       return true;
     }
@@ -116,8 +118,12 @@ const zodMessage = (err: z.ZodError) =>
 
 export function startServer(app: App, cfg: Config) {
   const db = app.db;
+  configureOAuth(cfg.oauthRedirectHosts);
   const loginLimiter = new RateLimiter(10, 15 * 60_000);
   const suggestLimiter = new RateLimiter(5, 60 * 60_000);
+  const registerLimiter = new RateLimiter(20, 60 * 60_000);
+  const pushLimiter = new RateLimiter(30, 60 * 60_000);
+  const pushTestLimiter = new RateLimiter(5, 60 * 60_000);
   const clientIp = new WeakMap<Request, string>();
   const ipOf = (req: Request) => clientIp.get(req) ?? "unknown";
 
@@ -476,13 +482,20 @@ export function startServer(app: App, cfg: Config) {
       }
     })
     .get("/push/key", () => ({ publicKey: app.push.publicKey }))
-    .post("/push/subscribe", ({ body, set }) => {
+    .post("/push/subscribe", ({ request, body, set }) => {
+      if (!pushLimiter.allow(ipOf(request))) {
+        set.status = 429;
+        return { error: "Zu viele Anfragen." };
+      }
       const parsed = subscriptionSchema.safeParse(body ?? {});
       if (!parsed.success) {
         set.status = 400;
         return { error: zodMessage(parsed.error) };
       }
-      app.push.subscribe(parsed.data);
+      if (!app.push.subscribe(parsed.data)) {
+        set.status = 503;
+        return { error: "Benachrichtigungen sind gerade nicht verfügbar." };
+      }
       return { ok: true };
     })
     .post("/push/unsubscribe", ({ body }) => {
@@ -490,7 +503,8 @@ export function startServer(app: App, cfg: Config) {
       if (endpoint) app.push.unsubscribe(endpoint);
       return { ok: true };
     })
-    .post("/push/test", async ({ body }) => {
+    .post("/push/test", async ({ request, body }) => {
+      if (!pushTestLimiter.allow(ipOf(request))) return { ok: false };
       const endpoint = (body as { endpoint?: string })?.endpoint;
       return { ok: endpoint ? await app.push.test(endpoint) : false };
     });
@@ -525,11 +539,24 @@ export function startServer(app: App, cfg: Config) {
     .get("/.well-known/oauth-authorization-server", ({ request }) => authorizationServerMetadata(baseUrl(request)))
     .get("/.well-known/oauth-authorization-server/mcp", ({ request }) => authorizationServerMetadata(baseUrl(request)))
     .get("/.well-known/openid-configuration", ({ request }) => authorizationServerMetadata(baseUrl(request)))
-    .post("/oauth/register", ({ request }) => handleRegister(db, request))
+    .post("/oauth/register", ({ request }) =>
+      registerLimiter.allow(ipOf(request))
+        ? handleRegister(db, request)
+        : new Response(JSON.stringify({ error: "slow_down", error_description: "Too many registrations." }), {
+            status: 429,
+            headers: { "content-type": "application/json" },
+          }),
+    )
     .get("/oauth/authorize", ({ request }) => handleAuthorizeGet(db, request, sessionToken(request)))
     .post("/oauth/authorize", async ({ request }) => {
       let cookie: string | null = null;
-      const res = await handleAuthorizePost(db, request, sessionToken(request), (t) => (cookie = sessionCookie(t)));
+      const res = await handleAuthorizePost(
+        db,
+        request,
+        sessionToken(request),
+        (t) => (cookie = sessionCookie(t)),
+        () => loginLimiter.allow(ipOf(request)),
+      );
       if (cookie) res.headers.append("set-cookie", cookie);
       return res;
     })
@@ -664,7 +691,8 @@ export function startServer(app: App, cfg: Config) {
     idleTimeout: 60,
     maxRequestBodySize: 2 * 1024 * 1024,
     async fetch(request, srv) {
-      const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || srv.requestIP(request)?.address || "unknown";
+      // The reverse proxy (Traefik) appends the real client address as the last entry.
+      const ip = request.headers.get("x-forwarded-for")?.split(",").at(-1)?.trim() || srv.requestIP(request)?.address || "unknown";
       clientIp.set(request, ip);
       const res = await web.handle(request);
       return finalize(request, res);

@@ -139,4 +139,54 @@ describe("http", async () => {
     });
     expect(ok.status).toBe(201);
   });
+
+  test("oauth: rejects unknown redirect hosts, rotates refresh tokens", async () => {
+    const evil = await fetch(`${base}/oauth/register`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ client_name: "Claude", redirect_uris: ["https://evil.example/cb"] }),
+    });
+    expect(evil.status).toBe(400);
+
+    const redirect = "https://chatgpt.com/connector_platform_oauth_redirect";
+    const reg = await (
+      await fetch(`${base}/oauth/register`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ client_name: "ChatGPT", redirect_uris: [redirect] }),
+      })
+    ).json();
+    const verifier = "v".repeat(50);
+    const challenge = new Bun.CryptoHasher("sha256").update(verifier).digest("base64url");
+    const form = new URLSearchParams({
+      client_id: reg.client_id, redirect_uri: redirect, code_challenge: challenge, code_challenge_method: "S256",
+      response_type: "code", state: "s", email: "a@b.de", password: "passwort-123", action: "allow",
+    });
+    const auth = await fetch(`${base}/oauth/authorize`, { method: "POST", body: form, redirect: "manual" });
+    const code = new URL(auth.headers.get("location")!).searchParams.get("code")!;
+    const tok = await (
+      await fetch(`${base}/oauth/token`, {
+        method: "POST",
+        body: new URLSearchParams({ grant_type: "authorization_code", code, client_id: reg.client_id, redirect_uri: redirect, code_verifier: verifier }),
+      })
+    ).json();
+    const refreshed = await (
+      await fetch(`${base}/oauth/token`, { method: "POST", body: new URLSearchParams({ grant_type: "refresh_token", refresh_token: tok.refresh_token, client_id: reg.client_id }) })
+    ).json();
+    expect(refreshed.refresh_token).not.toBe(tok.refresh_token);
+    const reuse = await fetch(`${base}/oauth/token`, {
+      method: "POST",
+      body: new URLSearchParams({ grant_type: "refresh_token", refresh_token: tok.refresh_token, client_id: reg.client_id }),
+    });
+    expect(reuse.status).toBe(400);
+  });
+
+  test("push: only browser push services accepted", async () => {
+    const res = await fetch(`${base}/api/push/subscribe`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ subscription: { endpoint: "https://internal.example:8443/x", keys: { p256dh: "a", auth: "b" } } }),
+    });
+    expect(res.status).toBe(400);
+  });
 });
