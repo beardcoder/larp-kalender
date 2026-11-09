@@ -85,6 +85,16 @@ export function ListView() {
             <Icon name="pin" size={16} />
             {filters.radiusKm && position ? `${filters.radiusKm} km · ${originLabel(position, "nom").split(",")[0]}` : "Umkreis"}
           </button>
+          <button
+            class={`chip chip-type${filters.types.includes("tavern") ? " is-on" : ""}`}
+            aria-pressed={filters.types.includes("tavern")}
+            onClick={() =>
+              filtersStore.set((f) => ({ ...f, types: f.types.includes("tavern") ? f.types.filter((t) => t !== "tavern") : [...f.types, "tavern"] }))
+            }
+          >
+            <Icon name="mug" size={16} />
+            LARP-Taverne
+          </button>
           {(Object.keys(GENRES) as Genre[])
             .filter((g) => g !== "other")
             .map((g) => (

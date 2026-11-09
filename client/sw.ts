@@ -1,12 +1,15 @@
 /// <reference lib="webworker" />
 /** Service worker: offline app shell, cached event data, push notifications. */
 
+import { get, set } from "idb-keyval";
+
 declare const self: ServiceWorkerGlobalScope;
 declare const __VERSION__: string;
 declare const __PRECACHE__: string[];
 
 const CACHE = `lk-${__VERSION__}`;
 const DATA_CACHE = "lk-data";
+const BADGE_KEY = "lk.badge";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -57,7 +60,7 @@ self.addEventListener("fetch", (event) => {
   const path = url.pathname;
   if (path.startsWith("/admin") || path.startsWith("/oauth") || path.startsWith("/mcp") || path.startsWith("/api/admin")) return;
 
-  if (path === "/api/events" && !url.search) {
+  if ((path === "/api/events" || path === "/api/notifications") && !url.search) {
     event.respondWith(networkFirst(request, DATA_CACHE));
   } else if (path.startsWith("/assets/") || path.startsWith("/icons/")) {
     event.respondWith(cacheFirst(request));
@@ -74,6 +77,18 @@ interface PushPayload {
   tag?: string;
 }
 
+/** Unread count shown on the app icon; the app writes the exact value, pushes count up from there. */
+async function bumpBadge(): Promise<void> {
+  const nav = self.navigator as Navigator & { setAppBadge?: (n?: number) => Promise<void> };
+  const count = ((await get<number>(BADGE_KEY).catch(() => 0)) ?? 0) + 1;
+  await set(BADGE_KEY, count).catch(() => undefined);
+  await nav.setAppBadge?.(count).catch(() => undefined);
+}
+
+async function windows(): Promise<readonly WindowClient[]> {
+  return self.clients.matchAll({ type: "window", includeUncontrolled: true });
+}
+
 self.addEventListener("push", (event) => {
   let data: PushPayload = { title: "LARP-Kalender", body: "", url: "/" };
   try {
@@ -82,29 +97,36 @@ self.addEventListener("push", (event) => {
     if (event.data) data.body = event.data.text();
   }
   event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
-      icon: "/icons/icon-192.png",
-      badge: "/icons/badge-96.png",
-      tag: data.tag,
-      data: { url: data.url },
-      lang: "de",
-    }),
+    Promise.all([
+      self.registration.showNotification(data.title, {
+        body: data.body,
+        icon: "/icons/icon-192.png",
+        badge: "/icons/badge-96.png",
+        tag: data.tag,
+        data: { url: data.url },
+        lang: "de",
+        timestamp: Date.now(),
+      } as NotificationOptions),
+      data.tag === "test" ? undefined : bumpBadge(),
+      // Open windows refresh their notification center right away.
+      windows().then((list) => list.forEach((c) => c.postMessage({ type: "push", payload: data }))),
+    ]),
   );
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const target = new URL((event.notification.data as { url?: string })?.url ?? "/", self.location.origin).href;
+  const url = new URL((event.notification.data as { url?: string })?.url ?? "/", self.location.origin);
+  const path = url.pathname + url.search;
   event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
-      for (const client of clients) {
-        if ("focus" in client) {
-          void client.navigate(target);
-          return client.focus();
-        }
+    windows().then(async (list) => {
+      const client = list.find((c) => c.focused) ?? list[0];
+      if (client) {
+        // Navigate inside the running app (no reload, the event opens as a sheet).
+        client.postMessage({ type: "navigate", url: path });
+        return client.focus();
       }
-      return self.clients.openWindow(target);
+      return self.clients.openWindow(url.href);
     }),
   );
 });

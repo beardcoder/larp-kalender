@@ -16,6 +16,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",
     "elysia": "^1.4.30",
+    "idb-keyval": "^6.3.0",
     "motion": "^14.9.0",
     "preact": "^11.1.1",
     "web-push": "^3.6.7",

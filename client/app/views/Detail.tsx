@@ -131,6 +131,7 @@ export function DetailView({ slug }: { slug: string }) {
 
   const onFav = () => {
     const added = toggleFavorite(e.id);
+    navigator.vibrate?.(added ? [8, 40, 12] : 8);
     if (favRef.current) pop(favRef.current);
     toast(added ? "Auf die Merkliste gesetzt" : "Von der Merkliste entfernt");
   };

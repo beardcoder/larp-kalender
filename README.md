@@ -12,7 +12,11 @@ Live: https://larp.letsbenow.de (not indexed by search engines)
   and 1 req/s throttle) or the device location, optional sorting by distance, bookmarks, "new since last visit" markers,
   offline support, installable, pull-to-refresh, web push (new events and relevant changes – registration open,
   waitlist/sold out, cancelled, new date or place – batched per device and filtered by genre; changes of bookmarked
-  events always; reminders: registration opens, deadline in ≤3 days, start in ≤7 days), event suggestion form (lands as draft).
+  events always; reminders: registration opens, deadline in ≤3 days, start in ≤7 days), in-app notification center
+  (`/benachrichtigungen`, fed by `/api/notifications` plus on-device reminders for bookmarks – works without push too,
+  unread count on the bell and the app icon via the Badging API), notification taps and app shortcuts routed inside the
+  open app (`launch_handler`, service worker messages), view transitions between tabs, haptic feedback,
+  event suggestion form (lands as draft).
 - **Accounts**: one login for frontend and backend. Visitors can register as *member* (`/mehr#konto`) to sync
   bookmarks across devices and get a private, auto-updating bookmark feed (`/kalender.ics?feed=<token>`).
   Only *admin* and *editor* accounts can open `/admin`, create API tokens, use MCP or connect AI clients.

@@ -9,6 +9,8 @@ import { DetailView } from "./views/Detail.tsx";
 import { FavoritesView } from "./views/Favorites.tsx";
 import { ListView } from "./views/List.tsx";
 import { MoreView } from "./views/More.tsx";
+import { NotificationsView } from "./views/Notifications.tsx";
+import { noticesStore } from "./notifications.ts";
 import { SuggestView } from "./views/Suggest.tsx";
 
 const TABS: { path: string; label: string; icon: IconName }[] = [
@@ -30,6 +32,8 @@ function View({ path }: { path: string }) {
       return <MoreView />;
     case "/vorschlagen":
       return <SuggestView />;
+    case "/benachrichtigungen":
+      return <NotificationsView />;
     default:
       return (
         <section class="view">
@@ -58,6 +62,8 @@ export function App() {
   const favorites = useStore(favoritesStore);
   const { offline } = useStore(eventsStore);
   const account = useStore(accountStore);
+  const { unread } = useStore(noticesStore);
+  const unreadLabel = unread.size ? `Benachrichtigungen, ${unread.size} neu` : "Benachrichtigungen";
   const accountLink = (
     <a class="account-link" href="/mehr#konto" aria-label={account ? `Konto: ${account.user.name}` : "Anmelden"}>
       {account ? <span class="avatar small">{account.user.name.slice(0, 1).toUpperCase()}</span> : <span>Anmelden</span>}
@@ -79,6 +85,11 @@ export function App() {
               {t.path === "/merkliste" && favorites.length ? <span class="badge">{favorites.length}</span> : null}
             </a>
           ))}
+          <a href="/benachrichtigungen" class={active("/benachrichtigungen") ? "is-active" : ""} aria-current={active("/benachrichtigungen") ? "page" : undefined} aria-label={unreadLabel}>
+            <Icon name="bell" />
+            <span>Benachrichtigungen</span>
+            {unread.size ? <span class="badge">{unread.size}</span> : null}
+          </a>
         </nav>
         <a class="btn ghost side-suggest" href="/vorschlagen">
           <Icon name="plus" size={18} /> Termin vorschlagen
@@ -104,6 +115,10 @@ export function App() {
         <Brand />
         <span class="topbar-end">
           {offline ? <span class="offline">Offline</span> : null}
+          <a class={`bell-link${active("/benachrichtigungen") ? " is-active" : ""}`} href="/benachrichtigungen" aria-label={unreadLabel}>
+            <Icon name="bell" size={22} />
+            {unread.size ? <span class="bell-count">{unread.size > 9 ? "9+" : unread.size}</span> : null}
+          </a>
           {account !== undefined ? accountLink : null}
         </span>
       </div>
