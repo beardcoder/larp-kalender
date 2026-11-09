@@ -511,6 +511,10 @@ export function startServer(app: App, cfg: Config) {
         return { error: "Ortssuche gerade nicht erreichbar." };
       }
     })
+    // Recent new events and changes for the in-app notification center.
+    .get("/notifications", ({ request }) =>
+      cached(request, () => ({ items: app.push.activity(), today: today() }), { "content-type": "application/json" }, app.push.activityVersion()),
+    )
     .get("/push/key", () => ({ publicKey: app.push.publicKey }))
     .post("/push/subscribe", ({ request, body, set }) => {
       if (!pushLimiter.allow(ipOf(request))) {

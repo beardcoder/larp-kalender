@@ -8,9 +8,10 @@ import webpush from "web-push";
 import { z } from "zod";
 import { getSetting, nowIso, setSetting } from "./db.ts";
 import { listPublicEvents, today } from "./repo/events.ts";
-import type { LarpEvent } from "./shared/types.ts";
+import type { ActivityItem, LarpEvent } from "./shared/types.ts";
 import { EVENT_TYPES, GENRES, REGISTRATION_STATUS, keys } from "./shared/vocab.ts";
-import { daysBetween, formatDateRange } from "./shared/format.ts";
+import { formatDateRange } from "./shared/format.ts";
+import { reminderFor } from "./shared/reminders.ts";
 
 /** Only known browser push services may be used as endpoints (prevents SSRF via push delivery). */
 const PUSH_HOSTS = ["fcm.googleapis.com", "android.googleapis.com", "push.services.mozilla.com", "notify.windows.com", "push.apple.com"];
@@ -167,6 +168,53 @@ export class Push {
     }
   }
 
+  /**
+   * Recent announced activity (new events and relevant changes) for the in-app notification center.
+   * Only what was already announced, so the app and push notifications tell the same story.
+   */
+  activity(days = 30, limit = 80): ActivityItem[] {
+    const since = new Date(Date.now() - days * 86_400_000).toISOString();
+    const t = today();
+    const fresh = this.db
+      .query(
+        `SELECT id, announced_at AS at FROM events
+         WHERE announced_at >= ? AND status IN ('published', 'cancelled') AND end_date >= ?
+         ORDER BY announced_at DESC LIMIT ?`,
+      )
+      .all(since, t, limit) as { id: number; at: string }[];
+    const changes = this.db
+      .query(
+        `SELECT c.id, c.event_id, c.summary, c.announced_at AS at FROM event_changes c JOIN events e ON e.id = c.event_id
+         WHERE c.announced_at >= ? AND e.status IN ('published', 'cancelled') AND e.end_date >= ?
+         ORDER BY c.announced_at DESC, c.id DESC LIMIT ?`,
+      )
+      .all(since, t, limit) as { id: number; event_id: number; summary: string; at: string }[];
+    const ids = [...new Set([...fresh.map((r) => r.id), ...changes.map((r) => r.event_id)])];
+    const events = new Map(ids.length ? listPublicEvents(this.db, { ids, includePast: true }).map((e) => [e.id, e]) : []);
+    const items: ActivityItem[] = [];
+    for (const r of fresh) {
+      const e = events.get(r.id);
+      if (!e) continue;
+      const text = [formatDateRange(e.startDate, e.endDate), EVENT_TYPES[e.eventType], e.city].filter(Boolean).join(" · ");
+      items.push({ id: `new-${e.id}`, kind: "new", eventId: e.id, slug: e.slug, title: e.title, text, at: r.at });
+    }
+    for (const r of changes) {
+      const e = events.get(r.event_id);
+      if (!e) continue;
+      const text = r.summary.charAt(0).toUpperCase() + r.summary.slice(1);
+      items.push({ id: `change-${r.id}`, kind: "change", eventId: e.id, slug: e.slug, title: e.title, text, at: r.at });
+    }
+    return items.sort((a, b) => b.at.localeCompare(a.at)).slice(0, limit);
+  }
+
+  /** Changes whenever new activity was announced (for ETags). */
+  activityVersion(): string {
+    const r = this.db
+      .query("SELECT (SELECT MAX(announced_at) FROM events) a, (SELECT MAX(announced_at) FROM event_changes) b")
+      .get() as { a: string | null; b: string | null };
+    return `${r.a ?? ""}|${r.b ?? ""}`;
+  }
+
   /** Sends a test notification to one endpoint. */
   async test(endpoint: string): Promise<boolean> {
     const sub = this.db.query("SELECT * FROM push_subscriptions WHERE endpoint = ?").get(endpoint) as SubRow | null;
@@ -252,7 +300,7 @@ export class Push {
       for (const id of JSON.parse(sub.favorites) as number[]) {
         const e = cache.get(id);
         if (!e) continue;
-        const reminder = this.reminderFor(e, t);
+        const reminder = reminderFor(e, t);
         if (!reminder) continue;
         const already = this.db
           .query("SELECT 1 FROM push_sent WHERE subscription_id = ? AND event_id = ? AND kind = ?")
@@ -261,37 +309,9 @@ export class Push {
         this.db
           .query("INSERT INTO push_sent (subscription_id, event_id, kind, sent_at) VALUES (?, ?, ?, ?)")
           .run(sub.id, e.id, reminder.kind, nowIso());
-        await this.send(sub, { ...reminder.payload, url: `/termin/${e.slug}`, tag: `${reminder.kind}-${e.id}` });
+        await this.send(sub, { title: reminder.title, body: reminder.body, url: `/termin/${e.slug}`, tag: `${reminder.kind}-${e.id}` });
       }
     }
-  }
-
-  private reminderFor(e: LarpEvent, t: string): { kind: string; payload: Omit<Payload, "url"> } | null {
-    if (e.status === "cancelled") return null; // announced as a change
-    const open = ["open", "waitlist"].includes(e.registrationStatus);
-    if (e.registrationDeadline && open) {
-      const d = daysBetween(t, e.registrationDeadline);
-      if (d >= 0 && d <= 3)
-        return {
-          kind: "deadline",
-          payload: {
-            title: d === 0 ? `Heute Anmeldeschluss: ${e.title}` : `Anmeldeschluss in ${d} ${d === 1 ? "Tag" : "Tagen"}`,
-            body: `${e.title} – jetzt anmelden, solange es geht.`,
-          },
-        };
-    }
-    if (e.registrationOpens && e.registrationOpens <= t && daysBetween(e.registrationOpens, t) <= 2 && e.registrationStatus !== "closed" && e.registrationStatus !== "sold_out")
-      return { kind: "opens", payload: { title: `Anmeldung offen: ${e.title}`, body: "Die Anmeldung ist gestartet." } };
-    const until = daysBetween(t, e.startDate);
-    if (until >= 0 && until <= 7)
-      return {
-        kind: "start",
-        payload: {
-          title: until === 0 ? `Heute geht's los: ${e.title}` : `In ${until} ${until === 1 ? "Tag" : "Tagen"}: ${e.title}`,
-          body: [e.venue, e.city].filter(Boolean).join(", ") || "Gute Reise und viel Spaß im Spiel!",
-        },
-      };
-    return null;
   }
 
   start(): void {

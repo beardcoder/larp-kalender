@@ -3,6 +3,7 @@ import { openDb } from "../src/db.ts";
 import { Push, type Payload } from "../src/push.ts";
 import { addDays, createEvent, getEvent, today, updateEvent } from "../src/repo/events.ts";
 import { toPublicEvent } from "../src/repo/events.ts";
+import { reminderFor } from "../src/shared/reminders.ts";
 
 function setup() {
   const db = openDb(":memory:");
@@ -73,5 +74,42 @@ describe("push notifications", () => {
     push.recordChanges(before, after);
     await push.announce();
     expect(sent[0]!.payload).toMatchObject({ title: "Update: Winterquartier", body: "Abgesagt" });
+  });
+
+  test("activity feed lists announced new events and changes, newest first", async () => {
+    const { db, push } = setup();
+    const e = createEvent(db, { title: "Grenzland", startDate: start, registrationStatus: "soon" }, { userId: null, source: "manual" });
+    createEvent(db, { title: "Entwurf", startDate: start, status: "draft" }, { userId: null, source: "suggestion" });
+    expect(push.activity()).toHaveLength(0); // nothing announced yet
+    const v1 = push.activityVersion();
+    await push.announce();
+    expect(push.activity().map((i) => i.id)).toEqual([`new-${e.id}`]);
+
+    const before = toPublicEvent(getEvent(db, e.id)!);
+    const after = toPublicEvent(updateEvent(db, e.id, { registrationStatus: "open" }, { userId: null })!);
+    push.recordChanges(before, after);
+    expect(push.activity()).toHaveLength(1); // pending changes appear once they are announced
+    await new Promise((r) => setTimeout(r, 5));
+    await push.announce();
+    const items = push.activity();
+    expect(items.map((i) => i.kind)).toEqual(["change", "new"]);
+    expect(items[0]).toMatchObject({ eventId: e.id, title: "Grenzland", text: "Anmeldung jetzt offen" });
+    expect(push.activityVersion()).not.toBe(v1);
+  });
+});
+
+describe("reminders", () => {
+  const base = toPublicEvent(
+    createEvent(openDb(":memory:"), { title: "Lager", startDate: addDays(today(), 5), city: "Kassel" }, { userId: null, source: "manual" }),
+  );
+  test("start reminder within a week", () => {
+    expect(reminderFor(base, today())).toMatchObject({ kind: "start", title: "In 5 Tagen: Lager", body: "Kassel" });
+  });
+  test("deadline reminder wins while registration is open", () => {
+    const e = { ...base, registrationStatus: "open" as const, registrationDeadline: addDays(today(), 1) };
+    expect(reminderFor(e, today())).toMatchObject({ kind: "deadline", title: "Anmeldeschluss in 1 Tag" });
+  });
+  test("no reminder for cancelled events", () => {
+    expect(reminderFor({ ...base, status: "cancelled" }, today())).toBeNull();
   });
 });

@@ -128,6 +128,9 @@ function NotificationSection() {
   return (
     <section class="panel" id="benachrichtigungen">
       <h2>Benachrichtigungen</h2>
+      <p class="hint">
+        Alle Hinweise findest du auch in der App unter <a href="/benachrichtigungen">Benachrichtigungen</a>, mit oder ohne Push.
+      </p>
       {!supported ? (
         needsInstallForPush() ? (
           <p>Auf iPhone und iPad funktionieren Benachrichtigungen nur in der installierten App. Füge die Seite zuerst zum Home-Bildschirm hinzu.</p>

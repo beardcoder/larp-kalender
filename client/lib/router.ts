@@ -17,17 +17,44 @@ const read = (): Location => ({
 
 export const locationStore = createStore<Location>(read());
 
-window.addEventListener("popstate", () => locationStore.set(read()));
+type TransitionDoc = Document & { startViewTransition?: (update: () => Promise<void>) => unknown };
+
+/**
+ * Applies a route change inside a View Transition (cross-fade between views, like a native app) where supported.
+ * Overlays (event sheets) have their own animation and switch without it.
+ */
+function commit(update: () => void, animate: boolean): void {
+  const doc = document as TransitionDoc;
+  if (!animate || !doc.startViewTransition || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return update();
+  doc.startViewTransition(async () => {
+    update();
+    // Let Preact render the new view before the "after" snapshot is taken.
+    await new Promise((r) => setTimeout(r, 0));
+  });
+}
+
+window.addEventListener("popstate", () => {
+  const next = read();
+  const prev = locationStore.get();
+  commit(() => locationStore.set(next), !next.background && !prev.background && next.path !== prev.path);
+});
 
 export function navigate(to: string, opts: { replace?: boolean; background?: string | null } = {}): void {
   if (to === window.location.pathname + window.location.search && !opts.replace) return;
   const state = opts.background ? { background: opts.background } : null;
+  const prev = locationStore.get();
   if (opts.replace) history.replaceState(state, "", to);
   else history.pushState(state, "", to);
-  locationStore.set(read());
+  const next = read();
   const hash = to.split("#")[1];
+  commit(
+    () => {
+      locationStore.set(next);
+      if (!hash && !opts.background) window.scrollTo({ top: 0 });
+    },
+    !opts.background && !prev.background && next.path !== prev.path,
+  );
   if (hash) setTimeout(() => document.getElementById(hash)?.scrollIntoView({ block: "start" }), 60);
-  else if (!opts.background) window.scrollTo({ top: 0 });
 }
 
 /** Go back if the previous entry belongs to the app, otherwise navigate to the fallback. */

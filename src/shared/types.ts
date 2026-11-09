@@ -68,3 +68,16 @@ export interface ApiToken {
   createdAt: string;
   lastUsedAt: string | null;
 }
+
+/** One entry of the public activity feed shown in the app's notification center. */
+export interface ActivityItem {
+  /** Stable id: "new-<eventId>" or "change-<changeId>". */
+  id: string;
+  kind: "new" | "change";
+  eventId: number;
+  slug: string;
+  title: string;
+  /** "Fantasy · Con · Köln" for new events, the change summary for changes. */
+  text: string;
+  at: string;
+}
