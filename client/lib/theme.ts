@@ -13,3 +13,5 @@ export function applyTheme(theme: Theme): void {
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#15110e" : "#f5efe6");
 }
 themeStore.subscribe(applyTheme);
+// "Wie das System": keep the status bar colour in step when the system switches between light and dark.
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => applyTheme(themeStore.get()));
