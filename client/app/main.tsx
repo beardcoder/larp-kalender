@@ -42,6 +42,14 @@ setupPullToRefresh(async () => {
   toast(offline ? "Offline – zeige gespeicherte Termine" : error ? "Aktualisieren fehlgeschlagen" : "Termine aktualisiert");
 });
 
+// Native feel on touch devices: a long press on links, cards and images opens no browser menu
+// ("open in new tab/window", "download image"). Text fields keep their menu.
+if (window.matchMedia("(pointer: coarse), (display-mode: standalone)").matches) {
+  root.addEventListener("contextmenu", (e) => {
+    if ((e.target as HTMLElement).closest("a, img, button, svg, .card, .notice-item, .tabbar, .topbar")) e.preventDefault();
+  });
+}
+
 // Coming back to the foreground: the live connection reopens and catches up (see startLive).
 window.addEventListener("online", () => (void loadEvents(), void loadActivity()));
 window.addEventListener("offline", () => eventsStore.set((s) => ({ ...s, offline: true })));

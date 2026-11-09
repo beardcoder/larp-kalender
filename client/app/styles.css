@@ -2054,13 +2054,71 @@ legend {
   }
 }
 
-/* App feel: no text selection or callouts on navigation chrome. */
+/* ---------- native feel on touch devices and in the installed app ---------- */
+
+html {
+  /* No double-tap zoom delay on buttons and links. */
+  touch-action: manipulation;
+}
+a,
+img,
+svg {
+  /* Long press opens no link preview / "open in new window" menu, images cannot be dragged out. */
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+}
 .tabbar,
 .topbar,
-.side-nav {
+.sidebar {
   -webkit-user-select: none;
   user-select: none;
-  -webkit-touch-callout: none;
+}
+@media (pointer: coarse), (display-mode: standalone) {
+  /* The interface is not a document: long presses do not start text selection ... */
+  body {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  /* ... except where copying is useful: form fields and the facts of an event (title, address, description). */
+  input,
+  textarea,
+  select,
+  [contenteditable],
+  .detail-title,
+  .detail-summary,
+  .detail-text,
+  .facts,
+  .register-line {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+  /* Pressed states like native controls. */
+  .chip,
+  .action,
+  .icon-btn,
+  .segmented button,
+  .bell-link,
+  .notice-clear {
+    transition: scale 0.12s ease-out, background 0.15s;
+  }
+  .chip:active,
+  .action:active,
+  .icon-btn:active,
+  .segmented button:active,
+  .bell-link:active,
+  .notice-clear:active {
+    scale: 0.94;
+  }
+  .tabbar a .tab-icon,
+  .side-nav a .icon {
+    transition: scale 0.12s ease-out;
+  }
+  .tabbar a:active .tab-icon {
+    scale: 0.86;
+  }
+  .card:active {
+    background: var(--bg-hover);
+  }
 }
 
 /* Installed app: a solid top bar instead of frosted glass, like a native navigation bar. */
