@@ -89,6 +89,8 @@ export class Push {
   private vapid: { publicKey: string; privateKey: string };
   private timer: Timer | null = null;
   private debounce: Timer | null = null;
+  /** Called after new activity was announced (live update of open app windows). */
+  onAnnounced?: () => void;
 
   constructor(
     private db: Database,
@@ -198,11 +200,17 @@ export class Push {
       const text = [formatDateRange(e.startDate, e.endDate), EVENT_TYPES[e.eventType], e.city].filter(Boolean).join(" · ");
       items.push({ id: `new-${e.id}`, kind: "new", eventId: e.id, slug: e.slug, title: e.title, text, at: r.at });
     }
-    for (const r of changes) {
-      const e = events.get(r.event_id);
+    // One entry per event: the newest change, earlier ones appended ("Warteliste · vorher: Anmeldung jetzt offen").
+    const byEvent = new Map<number, typeof changes>();
+    for (const r of changes) byEvent.set(r.event_id, [...(byEvent.get(r.event_id) ?? []), r]);
+    for (const [eventId, rows] of byEvent) {
+      const e = events.get(eventId);
       if (!e) continue;
-      const text = r.summary.charAt(0).toUpperCase() + r.summary.slice(1);
-      items.push({ id: `change-${r.id}`, kind: "change", eventId: e.id, slug: e.slug, title: e.title, text, at: r.at });
+      const [latest, ...earlier] = rows;
+      const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+      const older = [...new Set(earlier.map((r) => r.summary))].filter((t) => t !== latest!.summary).slice(0, 2);
+      const text = cap(latest!.summary) + (older.length ? ` · vorher: ${older.join(", ")}` : "");
+      items.push({ id: `change-${latest!.id}`, kind: "change", eventId: e.id, slug: e.slug, title: e.title, text, at: latest!.at });
     }
     return items.sort((a, b) => b.at.localeCompare(a.at)).slice(0, limit);
   }
@@ -282,6 +290,7 @@ export class Push {
       );
       if (relevant.length && (await this.send(sub, changePayload(relevant, favorites)))) sent++;
     }
+    this.onAnnounced?.();
     console.log(`[push] announced ${newEvents.length} new event(s) and ${changes.length} change(s): ${sent} notification(s) to ${subs.length} device(s)`);
     return { newEvents: newEvents.length, changes: changes.length, sent };
   }
