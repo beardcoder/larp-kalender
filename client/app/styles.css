@@ -1526,8 +1526,14 @@ legend {
 
 /* ---------- radius search ---------- */
 
-.chip-radius {
+.chip-radius,
+.chip-type {
   gap: 6px;
+}
+.chip-type.is-on {
+  background: color-mix(in srgb, var(--accent) 18%, var(--bg-raised));
+  border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+  color: var(--ink);
 }
 .chip-radius.is-on {
   background: color-mix(in srgb, var(--yellow) 18%, var(--bg-raised));
@@ -1961,4 +1967,20 @@ legend {
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
+}
+
+/* Installed app (iOS status bar is translucent): a solid top bar instead of frosted glass, so nothing scrolls
+   blurred through the status bar area and the header stays crisp. */
+@media (display-mode: standalone) {
+  .topbar {
+    background: var(--bg);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-bottom: 1px solid var(--line);
+  }
+  .tabbar {
+    background: var(--bg-sunken);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
 }

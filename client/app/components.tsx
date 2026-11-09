@@ -35,6 +35,7 @@ const PATHS = {
   copy: "M9 9h10v10H9zM5 15V5h10",
   refresh: "M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7",
   settings: "M4 7h9M17 7h3M15 5v4M4 17h3M11 17h9M9 15v4",
+  mug: "M5 8h11v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8ZM16 10h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2M5 8a3 3 0 0 1 3-3 3 3 0 0 1 5 0 3 3 0 0 1 3 3",
 } as const;
 
 export type IconName = keyof typeof PATHS;
