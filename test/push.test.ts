@@ -95,6 +95,15 @@ describe("push notifications", () => {
     expect(items.map((i) => i.kind)).toEqual(["change", "new"]);
     expect(items[0]).toMatchObject({ eventId: e.id, title: "Grenzland", text: "Anmeldung jetzt offen" });
     expect(push.activityVersion()).not.toBe(v1);
+
+    // A second change of the same event replaces the entry instead of adding one.
+    const waitlist = toPublicEvent(updateEvent(db, e.id, { registrationStatus: "waitlist" }, { userId: null })!);
+    push.recordChanges(after, waitlist);
+    await new Promise((r) => setTimeout(r, 5));
+    await push.announce();
+    const merged = push.activity();
+    expect(merged).toHaveLength(2);
+    expect(merged[0]!.text).toBe("Warteliste · vorher: Anmeldung jetzt offen");
   });
 });
 

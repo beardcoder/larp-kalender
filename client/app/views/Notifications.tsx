@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "preact/hooks";
+import { attachSwipe, dismissRow } from "../../lib/swipe.ts";
 import { useStore } from "../../lib/store.ts";
 import { formatDate } from "../../../src/shared/format.ts";
 import { EmptyState, Icon, type IconName } from "../components.tsx";
-import { markAllSeen, markSeen, noticesStore, type Notice } from "../notifications.ts";
+import { dismiss, markAllSeen, markSeen, noticesStore, type Notice } from "../notifications.ts";
 import { enablePush, needsInstallForPush, pushPrefsStore, pushSupported } from "../push.ts";
 import { toast } from "../toast.tsx";
 
@@ -40,9 +41,23 @@ function iconFor(n: Notice): { icon: IconName; tone: string } {
 function NoticeRow({ n, unread }: { n: Notice; unread: boolean }) {
   const { icon, tone } = iconFor(n);
   const kicker = n.kind === "new" ? "Neu im Kalender" : n.kind === "change" ? (n.favorite ? "Merkliste · Änderung" : "Änderung") : null;
+  const itemRef = useRef<HTMLLIElement>(null);
+  const rowRef = useRef<HTMLAnchorElement>(null);
+  useEffect(() => (rowRef.current && itemRef.current ? attachSwipe(rowRef.current, itemRef.current, () => dismiss([n.id])) : undefined), [n.id]);
   return (
-    <li>
-      <a class={`notice${unread ? " is-unread" : ""}`} href={`/termin/${encodeURIComponent(n.slug)}`} data-overlay onClick={() => markSeen(n.id)}>
+    <li class="notice-item" ref={itemRef}>
+      <span class="notice-swipe-bg" aria-hidden="true">
+        <Icon name="close" size={18} />
+        Entfernen
+      </span>
+      <a
+        ref={rowRef}
+        class={`notice${unread ? " is-unread" : ""}`}
+        href={`/termin/${encodeURIComponent(n.slug)}`}
+        data-overlay
+        draggable={false}
+        onClick={() => markSeen(n.id)}
+      >
         <span class={`notice-icon tone-${tone}`} aria-hidden="true">
           <Icon name={icon} size={18} />
         </span>
@@ -57,7 +72,38 @@ function NoticeRow({ n, unread }: { n: Notice; unread: boolean }) {
           {n.favorite && n.kind !== "reminder" ? <Icon name="bookmark" size={14} class="notice-fav" /> : null}
         </span>
       </a>
+      <button
+        class="notice-close"
+        aria-label={`Entfernen: ${n.title}`}
+        onClick={() => rowRef.current && itemRef.current && void dismissRow(rowRef.current, itemRef.current, () => dismiss([n.id]))}
+      >
+        <Icon name="close" size={14} />
+      </button>
     </li>
+  );
+}
+
+/** Section heading with an iOS-like clear button: tap the ×, then confirm with "Löschen". */
+function GroupHead({ id, label, ids }: { id?: string; label: string; ids: string[] }) {
+  const [confirm, setConfirm] = useState(false);
+  useEffect(() => {
+    if (!confirm) return;
+    const t = setTimeout(() => setConfirm(false), 3000);
+    return () => clearTimeout(t);
+  }, [confirm]);
+  return (
+    <div class="notice-group-head">
+      <h2 id={id}>{label}</h2>
+      {confirm ? (
+        <button class="notice-clear is-confirm" onClick={() => (navigator.vibrate?.(10), dismiss(ids))}>
+          Löschen
+        </button>
+      ) : (
+        <button class="notice-clear" aria-label={`${label} entfernen`} onClick={() => setConfirm(true)}>
+          <Icon name="close" size={14} />
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -141,7 +187,7 @@ export function NotificationsView() {
 
       {reminders.length ? (
         <section class="notice-group" aria-labelledby="reminders-heading">
-          <h2 id="reminders-heading">Fällig auf deiner Merkliste</h2>
+          <GroupHead id="reminders-heading" label="Fällig auf deiner Merkliste" ids={reminders.map((n) => n.id)} />
           <ul class="notice-list">
             {reminders.map((n) => (
               <NoticeRow key={n.id} n={n} unread={isUnread(n)} />
@@ -167,7 +213,7 @@ export function NotificationsView() {
 
       {groups.map((g) => (
         <section class="notice-group" key={g.label}>
-          <h2>{g.label}</h2>
+          <GroupHead label={g.label} ids={g.items.map((n) => n.id)} />
           <ul class="notice-list">
             {g.items.map((n) => (
               <NoticeRow key={n.id} n={n} unread={isUnread(n)} />
@@ -185,7 +231,7 @@ export function NotificationsView() {
           </p>
         </EmptyState>
       ) : list.length ? (
-        <p class="hint notices-foot">Zeigt die letzten 30 Tage.</p>
+        <p class="hint notices-foot">Zum Entfernen nach links wischen. Ältere Einträge verschwinden nach 30 Tagen von selbst.</p>
       ) : null}
     </section>
   );

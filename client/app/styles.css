@@ -1781,8 +1781,11 @@ legend {
   gap: 12px;
 }
 .notices-head .view-title {
-  font-size: clamp(1.9rem, 7vw, 2.9rem);
-  overflow-wrap: anywhere;
+  /* "Benachrichtigungen" is long: shrink on narrow phones, hyphenate as a last resort instead of breaking anywhere. */
+  font-size: clamp(1.55rem, 7.6vw, 2.9rem);
+  min-width: 0;
+  hyphens: auto;
+  -webkit-hyphens: auto;
 }
 .notice-prompt {
   display: flex;
@@ -1811,6 +1814,34 @@ legend {
 .notices-filter {
   margin: 4px 0 8px;
 }
+.notice-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.notice-clear {
+  display: inline-grid;
+  place-items: center;
+  min-width: 28px;
+  height: 28px;
+  margin-top: 14px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--bg-hover);
+  color: var(--ink-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.notice-clear:not(.is-confirm) {
+  padding: 0;
+}
+.notice-clear.is-confirm {
+  background: var(--danger);
+  color: #fff;
+  animation: bell-pop 0.25s ease-out;
+}
 .notice-group h2 {
   font-size: 0.78rem;
   font-weight: 600;
@@ -1831,7 +1862,41 @@ legend {
 .notice-list li + li {
   border-top: 1px solid var(--line);
 }
+.notice-item {
+  position: relative;
+  background: color-mix(in srgb, var(--danger) calc(var(--reveal, 0) * 85%), var(--bg-raised));
+}
+.notice-swipe-bg {
+  position: absolute;
+  inset: 0 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 18px;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  opacity: var(--reveal, 0);
+  pointer-events: none;
+}
+.notice-item.is-armed {
+  background: var(--danger);
+}
+.notice-item.is-armed .notice-swipe-bg {
+  opacity: 1;
+}
+.notice-item.is-swiping .notice {
+  cursor: grabbing;
+}
+.notice-item.is-swiping .notice-close,
+.notice-item.is-armed .notice-close {
+  display: none;
+}
 .notice {
+  position: relative;
+  touch-action: pan-y;
+  background: var(--bg-raised);
+  -webkit-user-drag: none;
   display: flex;
   gap: 12px;
   align-items: flex-start;
@@ -1846,10 +1911,39 @@ legend {
 }
 .notice:active {
   background: var(--bg-hover);
-  scale: 0.995;
 }
 .notice.is-unread {
   background: color-mix(in srgb, var(--accent) 7%, var(--bg-raised));
+}
+/* Dismiss button for mouse and keyboard users (touch users swipe). */
+.notice-close {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  translate: 0 -50%;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  background: var(--bg-raised);
+  color: var(--ink-muted);
+  opacity: 0;
+  pointer-events: none;
+}
+.notice-close:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+@media (hover: hover) and (pointer: fine) {
+  .notice-item:hover .notice-close {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .notice-item:hover .notice-meta {
+    visibility: hidden;
+  }
 }
 .notice-icon {
   display: grid;

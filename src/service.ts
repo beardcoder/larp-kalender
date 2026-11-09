@@ -3,6 +3,7 @@
 import type { Database } from "bun:sqlite";
 import type { Config } from "./config.ts";
 import { Geocoder } from "./geocode.ts";
+import { Live } from "./live.ts";
 import { Push } from "./push.ts";
 import {
   createEvent,
@@ -23,12 +24,14 @@ export type CreateResult =
 export class App {
   readonly push: Push;
   readonly geocoder: Geocoder;
+  readonly live = new Live();
 
   constructor(
     readonly db: Database,
     readonly cfg: Config,
   ) {
     this.push = new Push(db, cfg.contactEmail);
+    this.push.onAnnounced = () => this.live.notify("activity", 0);
     this.geocoder = new Geocoder(db, cfg.contactEmail);
   }
 
@@ -63,7 +66,9 @@ export class App {
   }
 
   deleteEvent(id: number): boolean {
-    return deleteEvent(this.db, id);
+    const deleted = deleteEvent(this.db, id);
+    if (deleted) this.live.notify("events");
+    return deleted;
   }
 
   getEvent(idOrSlug: number | string): AdminLarpEvent | null {
@@ -71,6 +76,7 @@ export class App {
   }
 
   private afterSave(event: AdminLarpEvent): void {
+    if (event.status !== "draft") this.live.notify("events");
     if (event.status === "published") this.push.scheduleAnnouncement();
     if (this.cfg.geocode && event.lat === null && (event.city || event.postalCode)) this.geocoder.nudge();
   }

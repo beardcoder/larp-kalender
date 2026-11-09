@@ -511,6 +511,8 @@ export function startServer(app: App, cfg: Config) {
         return { error: "Ortssuche gerade nicht erreichbar." };
       }
     })
+    // Live hints for open app windows (Server-Sent Events).
+    .get("/live", ({ request }) => app.live.stream(request))
     // Recent new events and changes for the in-app notification center.
     .get("/notifications", ({ request }) =>
       cached(request, () => ({ items: app.push.activity(), today: today() }), { "content-type": "application/json" }, app.push.activityVersion()),

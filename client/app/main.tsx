@@ -8,6 +8,7 @@ import { applyTheme, eventsStore, loadEvents, markVisited, themeStore } from "./
 import { setupPullToRefresh, updateApp } from "../lib/pull-refresh.ts";
 import { toast } from "./toast.tsx";
 import { loadActivity, startNotices } from "./notifications.ts";
+import { startLive } from "../lib/live.ts";
 
 try {
   const preload = document.getElementById("preload");
@@ -27,6 +28,12 @@ void loadActivity();
 void loadAccount();
 markVisited();
 
+// Live: changes made in the editorial backend show up in open windows within seconds.
+startLive({ events: () => void loadEvents(), activity: () => void loadActivity() }, () => {
+  void loadEvents();
+  void loadActivity();
+});
+
 // Pull down at the top of the page to reload data and pick up new app versions (PWA has no reload button).
 setupPullToRefresh(async () => {
   await Promise.all([loadEvents(), loadAccount(), loadActivity()]);
@@ -35,15 +42,7 @@ setupPullToRefresh(async () => {
   toast(offline ? "Offline – zeige gespeicherte Termine" : error ? "Aktualisieren fehlgeschlagen" : "Termine aktualisiert");
 });
 
-// Refresh when the app comes back to the foreground after a while.
-let lastLoad = Date.now();
-document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible" && Date.now() - lastLoad > 10 * 60_000) {
-    lastLoad = Date.now();
-    void loadEvents();
-    void loadActivity();
-  }
-});
+// Coming back to the foreground: the live connection reopens and catches up (see startLive).
 window.addEventListener("online", () => (void loadEvents(), void loadActivity()));
 window.addEventListener("offline", () => eventsStore.set((s) => ({ ...s, offline: true })));
 

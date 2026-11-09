@@ -14,7 +14,10 @@ Live: https://larp.letsbenow.de (not indexed by search engines)
   waitlist/sold out, cancelled, new date or place – batched per device and filtered by genre; changes of bookmarked
   events always; reminders: registration opens, deadline in ≤3 days, start in ≤7 days), in-app notification center
   (`/benachrichtigungen`, fed by `/api/notifications` plus on-device reminders for bookmarks – works without push too,
-  unread count on the bell and the app icon via the Badging API), notification taps and app shortcuts routed inside the
+  unread count on the bell and the app icon via the Badging API; swipe left to dismiss, clear per section; only seen/dismissed
+  ids are kept on the device and pruned when entries leave the 30-day feed – nothing is stored per person on the server),
+  live updates while the app is open (Server-Sent Events on `/api/live`, native in Bun: hints to reload events/activity,
+  connection only while the app is visible), notification taps and app shortcuts routed inside the
   open app (`launch_handler`, service worker messages), view transitions between tabs, haptic feedback,
   event suggestion form (lands as draft).
 - **Accounts**: one login for frontend and backend. Visitors can register as *member* (`/mehr#konto`) to sync
