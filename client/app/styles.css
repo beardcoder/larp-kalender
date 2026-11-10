@@ -896,10 +896,18 @@ button {
 }
 .sheet-grip {
   width: 40px;
-  height: 4px;
+  height: 5px;
   border-radius: 4px;
   background: var(--line-strong);
   margin: 8px auto 0;
+  flex: none;
+}
+/* Larger invisible touch target above the grip for the swipe-down gesture. */
+.sheet-grip::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 28px;
 }
 .sheet-head {
   display: flex;

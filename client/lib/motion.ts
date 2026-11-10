@@ -44,8 +44,9 @@ export function sheetIn(sheet: HTMLElement, backdrop: HTMLElement | null, fromSi
 /** Slides a sheet out and keeps it hidden until it is unmounted (no snap back after the animation). */
 export async function sheetOut(sheet: HTMLElement, backdrop: HTMLElement | null, fromSide: boolean): Promise<void> {
   if (reducedMotion()) return;
-  const a = animate(sheet, { translate: ["0 0", hidden(fromSide)] }, { duration: 0.24, ease: [0.4, 0, 1, 1] });
-  const b = backdrop ? animate(backdrop, { opacity: [1, 0] }, { duration: 0.22 }) : null;
+  // Start where the sheet is now (it may have been dragged down by the finger).
+  const a = animate(sheet, { translate: [sheet.style.translate || "0 0", hidden(fromSide)] }, { duration: 0.24, ease: [0.4, 0, 1, 1] });
+  const b = backdrop ? animate(backdrop, { opacity: [Number(backdrop.style.opacity || 1), 0] }, { duration: 0.22 }) : null;
   await Promise.all([a, b]);
   sheet.style.translate = hidden(fromSide);
   if (backdrop) backdrop.style.opacity = "0";

@@ -1,6 +1,7 @@
 import type { ComponentChildren } from "preact";
 import { useLayoutEffect, useRef } from "preact/hooks";
 import { sheetIn, sheetOut } from "../../lib/motion.ts";
+import { attachSheetDrag } from "../../lib/sheet-drag.ts";
 import { Icon } from "../components.tsx";
 
 const isWide = () => window.matchMedia("(min-width: 960px)").matches;
@@ -24,6 +25,7 @@ export function Sheet({
 }) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
   const closing = useRef(false);
   const side = variant === "panel" && isWide();
 
@@ -54,7 +56,10 @@ export function Sheet({
       }
     };
     document.addEventListener("keydown", onKey);
+    // Bottom sheets (not the side panel on wide screens) close with a swipe down.
+    const detachDrag = !side && sheetRef.current && bodyRef.current ? attachSheetDrag(sheetRef.current, bodyRef.current, backdropRef.current, () => void close()) : null;
     return () => {
+      detachDrag?.();
       document.removeEventListener("keydown", onKey);
       document.body.classList.remove("no-scroll");
       previous?.focus?.({ preventScroll: true });
@@ -72,7 +77,7 @@ export function Sheet({
             <Icon name="close" />
           </button>
         </header>
-        <div class="sheet-body">{children(() => void close())}</div>
+        <div class="sheet-body" ref={bodyRef}>{children(() => void close())}</div>
       </div>
     </div>
   );
