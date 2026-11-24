@@ -94,7 +94,7 @@ export function applyTheme(theme: Theme): void {
   if (theme === "auto") delete root.dataset.theme;
   else root.dataset.theme = theme;
   const dark = theme === "dark" || (theme === "auto" && matchMedia("(prefers-color-scheme: dark)").matches);
-  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#15110e" : "#f5efe6");
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#161513" : "#f7f4ee");
 }
 
 /* ---------- filtering ---------- */

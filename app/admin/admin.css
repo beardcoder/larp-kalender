@@ -19,10 +19,10 @@
   align-items: center;
   gap: 6px;
   padding: 8px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-s);
   text-decoration: none;
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--ink-muted);
 }
 .admin-topnav a.is-active {
@@ -73,9 +73,10 @@
 .stats strong {
   font-family: var(--font-display);
   font-size: 1.8rem;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.1;
-  color: var(--yellow);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
 }
 .stats span {
   font-size: 0.85rem;
@@ -96,7 +97,7 @@
   gap: 6px;
   padding: 10px 14px;
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--ink-muted);
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
@@ -106,11 +107,9 @@
   border-color: var(--accent);
 }
 .badge {
-  font-size: 0.72rem;
-  padding: 1px 7px;
-  border-radius: 999px;
-  background: var(--accent);
-  color: var(--accent-ink);
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
 }
 
 .table-wrap {
@@ -128,7 +127,7 @@
 .table th {
   text-align: left;
   font-size: 0.78rem;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--ink-faint);
   padding: 10px 12px;
   border-bottom: 1px solid var(--line);
@@ -152,7 +151,7 @@
 }
 .row-title {
   display: block;
-  font-weight: 600;
+  font-weight: 500;
   text-decoration: none;
 }
 a.row-title:hover {
@@ -183,7 +182,7 @@ a.row-title:hover {
 .admin-grid legend {
   font-family: var(--font-display);
   font-size: 1.2rem;
-  font-weight: 560;
+  font-weight: 500;
   float: left;
   width: 100%;
   grid-column: 1 / -1;

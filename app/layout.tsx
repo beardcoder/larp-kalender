@@ -26,10 +26,10 @@ export async function generateMetadata(): Promise<Metadata> {
   return { ...metadata, metadataBase: new URL(await baseUrl()) };
 }
 
-export const viewport: Viewport = { themeColor: "#15110e", width: "device-width", initialScale: 1, viewportFit: "cover" };
+export const viewport: Viewport = { themeColor: "#161513", width: "device-width", initialScale: 1, viewportFit: "cover" };
 
 /** Applies the stored colour scheme before the first paint (no flash of the wrong theme). */
-const themeScript = `try{var t=JSON.parse(localStorage.getItem("lk.theme")||'"auto"');if(t!=="auto")document.documentElement.dataset.theme=t;var d=t==="dark"||(t==="auto"&&matchMedia("(prefers-color-scheme: dark)").matches);document.querySelector('meta[name="theme-color"]').setAttribute("content",d?"#15110e":"#f5efe6")}catch(e){}`;
+const themeScript = `try{var t=JSON.parse(localStorage.getItem("lk.theme")||'"auto"');if(t!=="auto")document.documentElement.dataset.theme=t;var d=t==="dark"||(t==="auto"&&matchMedia("(prefers-color-scheme: dark)").matches);document.querySelector('meta[name="theme-color"]').setAttribute("content",d?"#161513":"#f7f4ee")}catch(e){}`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

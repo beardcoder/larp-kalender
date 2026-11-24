@@ -375,14 +375,14 @@ export function page(title: string, body: string, status = 200): Response {
 <meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
 <title>${escapeHtml(title)} · LARP-Kalender</title>
 <style>
-:root{color-scheme:dark;--bg:#15110e;--panel:#1f1915;--ink:#f3ebe0;--muted:#8c7c69;--accent:#ff7a3d;--line:#33291f}
+:root{color-scheme:dark;--bg:#161513;--panel:#1c1a18;--ink:#efe9de;--muted:#8a847a;--accent:#ff7a3d;--line:rgba(239,233,222,.12)}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--ink);
 font:16px/1.5 system-ui,sans-serif;padding:16px}main{width:100%;max-width:420px;background:var(--panel);border:1px solid var(--line);
-border-radius:18px;padding:28px}h1{font:700 1.6rem/1.2 system-ui,sans-serif;letter-spacing:-.02em;margin:0 0 16px}label{display:grid;gap:6px;margin:14px 0;font-size:.9rem;color:var(--muted)}
+border-radius:16px;padding:28px}h1{font:500 1.6rem/1.2 system-ui,sans-serif;letter-spacing:-.02em;margin:0 0 16px}label{display:grid;gap:6px;margin:14px 0;font-size:.9rem;color:var(--muted)}
 input{font:inherit;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
-input:focus-visible,button:focus-visible{outline:2px solid #f0b84a;outline-offset:2px}
-.actions{display:flex;gap:10px;margin-top:20px}button{font:inherit;font-weight:600;padding:12px 18px;border-radius:999px;border:1px solid var(--line);
-background:transparent;color:var(--ink);cursor:pointer}button.primary{background:linear-gradient(120deg,#ff7a3d,#e5482d);border-color:transparent;color:#1a0d05;flex:1;box-shadow:0 8px 28px -6px rgba(255,122,61,.45)}
+input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.actions{display:flex;gap:10px;margin-top:20px}button{font:inherit;font-weight:500;padding:12px 16px;border-radius:8px;border:1px solid var(--line);
+background:transparent;color:var(--ink);cursor:pointer}button.primary{background:var(--accent);border-color:transparent;color:#1a0d05;flex:1}
 .muted,.who{color:var(--muted);font-size:.9rem}.error{color:#ff9aa6}
 </style></head><body><main><h1>${escapeHtml(title)}</h1>${body}</main></body></html>`;
   return new Response(html, {
