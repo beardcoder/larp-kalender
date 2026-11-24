@@ -24,7 +24,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: e.title,
     description,
-    openGraph: { title: e.title, description, url: `/termin/${e.slug}`, ...(e.imageUrl ? { images: [e.imageUrl] } : {}) },
+    // openGraph replaces the layout's block as a whole, so the default image is repeated here.
+    openGraph: { title: e.title, description, url: `/termin/${e.slug}`, images: [e.imageUrl ?? { url: "/icons/og-image.png", width: 1200, height: 630 }] },
   };
 }
 
