@@ -12,7 +12,8 @@ services:
       CONTACT_EMAIL: ${CONTACT_EMAIL:-${ADMIN_EMAIL}}
     volumes:
       - data:/data
-    mem_limit: 192m
+    # Next.js on Bun idles around 100 MB and peaks near 170 MB under load.
+    mem_limit: 256m
     networks:
       - coolify
     labels:
