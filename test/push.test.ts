@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { openDb } from "../src/db.ts";
-import { Push, type Payload } from "../src/push.ts";
-import { addDays, createEvent, getEvent, today, updateEvent } from "../src/repo/events.ts";
-import { toPublicEvent } from "../src/repo/events.ts";
-import { reminderFor } from "../src/shared/reminders.ts";
+import { openDb } from "../lib/server/db.ts";
+import { Push, type Payload } from "../lib/server/push.ts";
+import { addDays, createEvent, getEvent, today, updateEvent } from "../lib/server/events.ts";
+import { toPublicEvent } from "../lib/server/events.ts";
+import { reminderFor } from "../lib/shared/reminders.ts";
 
 function setup() {
   const db = openDb(":memory:");

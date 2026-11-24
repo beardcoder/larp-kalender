@@ -1,8 +1,8 @@
 /** Fills a local development database with fictional demo events. Never run against production. */
 
-import { loadConfig } from "../src/config.ts";
-import { openDb } from "../src/db.ts";
-import { addDays, createEvent, today, type EventCreateInput } from "../src/repo/events.ts";
+import { loadConfig } from "../lib/server/config.ts";
+import { openDb } from "../lib/server/db.ts";
+import { addDays, createEvent, today, type EventCreateInput } from "../lib/server/events.ts";
 
 const cfg = loadConfig();
 if (process.env.NODE_ENV === "production") throw new Error("Refusing to seed demo data in production.");

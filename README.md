@@ -10,16 +10,15 @@ Live: https://larp.letsbenow.de (not indexed by search engines)
 - **Public PWA** (German): agenda list grouped by month, month calendar, event detail sheet, genre/type/country
   filters, radius search around a postcode/town (`/api/places`, proxied to OpenStreetMap Nominatim with cache
   and 1 req/s throttle) or the device location, optional sorting by distance, bookmarks, "new since last visit" markers,
-  offline support, installable, pull-to-refresh, web push (new events and relevant changes – registration open,
+  offline fallback, installable, web push (new events and relevant changes – registration open,
   waitlist/sold out, cancelled, new date or place – batched per device and filtered by genre; changes of bookmarked
   events always; reminders: registration opens, deadline in ≤3 days, start in ≤7 days), in-app notification center
   (`/benachrichtigungen`, fed by `/api/notifications` plus on-device reminders for bookmarks – works without push too,
-  unread count on the bell and the app icon via the Badging API; swipe left to dismiss, clear per section; only seen/dismissed
+  unread count on the bell and the app icon via the Badging API; dismiss per entry or per section; only seen/dismissed
   ids are kept on the device and pruned when entries leave the 30-day feed – nothing is stored per person on the server),
-  live updates while the app is open (Server-Sent Events on `/api/live`, native in Bun: hints to reload events/activity,
-  connection only while the app is visible), notification taps and app shortcuts routed inside the
-  open app (`launch_handler`, service worker messages), view transitions between tabs, haptic feedback,
-  event suggestion form (lands as draft).
+  live updates while the app is open (Server-Sent Events on `/api/live`: hints to refresh, connection only while the
+  app is visible), notification taps routed inside the open app (service worker messages), event suggestion form
+  (lands as draft).
 - **Accounts**: one login for frontend and backend. Visitors can register as *member* (`/mehr#konto`) to sync
   bookmarks across devices and get a private, auto-updating bookmark feed (`/kalender.ics?feed=<token>`).
   Only *admin* and *editor* accounts can open `/admin`, create API tokens, use MCP or connect AI clients.
@@ -34,12 +33,31 @@ Live: https://larp.letsbenow.de (not indexed by search engines)
 - Duplicate detection (same link or similar title within a week) for every create.
 - Background geocoding via OpenStreetMap Nominatim (for radius search and maps).
 - `noindex` everywhere (`X-Robots-Tag`, meta tag, `robots.txt`) unless `ALLOW_INDEXING=true`.
-- Low memory: single compiled Bun binary with `--smol`, SQLite, ~20–50 MB RSS.
+- Next.js standalone server on Bun with `--smol`, SQLite, ~100 MB RSS.
 
 ## Stack
 
-Bun · Elysia · bun:sqlite · MCP TypeScript SDK · Zod · Preact · motion.dev (`motion/mini`) · self-hosted fonts
-(Bricolage Grotesque, Inter Tight).
+Next.js 16 (App Router) on Bun · React 19 · bun:sqlite · MCP TypeScript SDK · Zod · web-push · next/font (Bricolage
+Grotesque, Inter Tight, self-hosted at build time).
+
+## Project layout
+
+| Path | What lives there |
+| --- | --- |
+| `app/(app)/` | Public pages. The layout loads upcoming events, activity and the account once; pages render them. |
+| `app/termin/…`, `app/(app)/termin/[slug]` | Event page (server rendered, Open Graph tags) and single-event `.ics`. |
+| `app/admin/` | Editorial backend: server components for lists, server actions (`actions.ts`) for every change. |
+| `app/actions.ts` | Server actions of the public app: login, registration, profile, bookmark sync, suggestions. |
+| `app/api/`, `app/kalender.ics`, `app/veranstaltungen.csv`, `app/feed.xml` | Route handlers: JSON API, feeds, push, places, live (SSE). |
+| `app/mcp`, `app/oauth`, `app/.well-known` | MCP endpoint and the OAuth 2.1 server for AI clients. |
+| `components/` | UI. `AppData.tsx` holds the client context plus app-wide effects (theme, live refresh, service worker). |
+| `lib/server/` | Framework-free domain code: database, events, users, push, feeds, OAuth, MCP, geocoding. `getApp()` is the per-process singleton. |
+| `lib/client/` | Device-local state (bookmarks, filters, radius centre, push preferences, notification read state). |
+| `lib/shared/` | Vocabularies, types, date formatting and reminder rules used on both sides. |
+| `public/sw.js` | Service worker (offline fallback, push), plain JavaScript. |
+
+Mutations from the UI are server actions (Next.js checks their origin, so no custom CSRF header). Open windows refresh
+via `router.refresh()` when `/api/live` hints that events or activity changed.
 
 ## MCP tools
 
@@ -64,11 +82,10 @@ Connect Claude Code: `claude mcp add --transport http --scope user larp-kalender
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | – | Bootstrap admin, created on start when no user exists. |
 | `CONTACT_EMAIL` | `ADMIN_EMAIL` | Contact for web push (VAPID) and Nominatim. |
 | `DATA_DIR` | `./.data` | SQLite location (VAPID keys are stored in the DB). |
-| `PUBLIC_DIR` | `./dist/public` | Built frontend. |
 | `GEOCODE` | `true` | Geocode addresses via Nominatim. |
 | `ALLOW_INDEXING` | `false` | Allow search engines. |
 | `OAUTH_REDIRECT_HOSTS` | – | Extra hosts allowed as OAuth redirect targets (built in: claude.ai, claude.com, chatgpt.com, chat.openai.com, platform.openai.com; http://localhost always). |
-| `HOST` / `PORT` | `0.0.0.0` / `3000` | HTTP listener. |
+| `HOSTNAME` / `PORT` | `0.0.0.0` / `3000` | HTTP listener (Next.js standalone server). |
 
 ## Development
 
@@ -76,14 +93,14 @@ Connect Claude Code: `claude mcp add --transport http --scope user larp-kalender
 bun install
 cp .env.example .env
 bun scripts/seed-demo.ts   # fictional demo events (local only)
-bun run dev                # client watcher + server on http://localhost:3000
+bun run dev                # http://localhost:3000
 bun test
 bun run typecheck
-bun run build              # dist/public + dist/larp-kalender (single binary)
+bun run build              # .next/standalone, run with: bun --smol .next/standalone/server.js
 ```
 
-CLI: `larp-kalender serve | health | user:create <email> <name> [admin|editor] | user:password <email>`
-(password via `PASSWORD` env).
+Users on the command line: `PASSWORD=… bun scripts/user.ts create <email> <name> [admin|editor|member]` and
+`PASSWORD=… bun scripts/user.ts password <email>`.
 
 Icons (favicons, app/maskable/Apple icons, notification badge, shortcut icons, `og-image.png`) are generated
 with `bun scripts/make-icons.ts` (needs ImageMagick).

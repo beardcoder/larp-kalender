@@ -1,32 +1,30 @@
 {
   "name": "larp-kalender",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "LARP event calendar with MCP server, admin backend, iCal feeds and PWA",
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun scripts/build-client.ts --watch & bun --watch src/index.ts serve",
-    "start": "bun src/index.ts serve",
-    "build:client": "bun scripts/build-client.ts",
-    "build:server": "bun build --compile --minify --sourcemap --compile-exec-argv=--smol src/index.ts --outfile dist/larp-kalender",
-    "build": "bun run build:client && bun run build:server",
+    "dev": "bun --bun next dev",
+    "build": "bun --bun next build",
+    "start": "bun --bun next start",
     "typecheck": "tsc --noEmit",
-    "test": "bun test"
+    "test": "bun test",
+    "user:create": "bun scripts/user.ts create",
+    "user:password": "bun scripts/user.ts password"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",
-    "elysia": "^1.4.30",
-    "idb-keyval": "^6.3.0",
-    "motion": "^14.9.0",
-    "preact": "^11.1.1",
-    "web-push": "^3.6.7",
+    "next": "16.4.6",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "web-push": "^4.0.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
-    "@fontsource-variable/fraunces": "^5.3.0",
-    "@fontsource-variable/inter-tight": "^5.3.0",
-    "@types/bun": "^1.4.4",
+    "@types/bun": "^1.4.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "@types/web-push": "^3.6.4",
     "typescript": "^7.0.2"
   }

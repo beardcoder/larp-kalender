@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { Live } from "../src/live.ts";
+import { Live } from "../lib/server/live.ts";
 
 test("live stream delivers coalesced hints and forgets closed connections", async () => {
   const live = new Live();
